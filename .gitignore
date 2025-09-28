@@ -1,0 +1,23 @@
+# .gitignore
+# Node
+node_modules/
+dist/
+build/
+.env
+*.log
+
+# Python
+__pycache__/
+*.pyc
+data/
+
+# MacOS
+.DS_Store
+
+# Electron/React
+*.local
+*.cache
+
+# Installer outputs
+advocacia-app/installer/*.exe
+advocacia-app/installer/*.iss.bak
