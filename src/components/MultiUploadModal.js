@@ -44,13 +44,6 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
     }
   };
 
-  const updateFileSession = (index, sessionId, sessionName) => {
-    const updatedFiles = [...selectedFiles];
-    updatedFiles[index].sessionId = sessionId;
-    updatedFiles[index].sessionName = sessionName;
-    setSelectedFiles(updatedFiles);
-  };
-
   const updateFileField = (index, field, value) => {
     const updatedFiles = [...selectedFiles];
     updatedFiles[index][field] = value;
@@ -241,18 +234,15 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
                             </label>
                             <select
                               value={file.sessionId || ""}
-                              onChange={(e) => {
-                                const sessionId = e.target.value;
-                                const sessionName =
-                                  sessions.find(
-                                    (s) => s.id.toString() === sessionId
-                                  )?.nome || "";
-                                updateFileSession(
+                              onChange={(e) =>
+                                updateFileField(
                                   index,
-                                  sessionId ? parseInt(sessionId) : null,
-                                  sessionName
-                                );
-                              }}
+                                  "sessionId",
+                                  e.target.value
+                                    ? parseInt(e.target.value, 10)
+                                    : null
+                                )
+                              }
                               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
                               <option value="">Sem sessão</option>

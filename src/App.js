@@ -69,6 +69,14 @@ function App() {
     }
   };
 
+  // Função centralizada para recarregar os dados principais
+  const refreshData = () => {
+    loadRecentFiles();
+    if (searchQuery) {
+      handleSearch(searchQuery);
+    }
+  };
+
   const handleFileOpen = async (arquivo) => {
     try {
       await window.electronAPI.updateArquivoAccess(arquivo.id);
@@ -91,10 +99,7 @@ function App() {
   };
 
   const handleEditSuccess = () => {
-    loadRecentFiles();
-    if (searchQuery) {
-      handleSearch(searchQuery);
-    }
+    refreshData();
     setShowEditModal(false);
     setEditingFile(null);
   };
@@ -305,6 +310,7 @@ function App() {
                   <SearchTab
                     results={searchResults}
                     query={searchQuery}
+                    onDataChange={refreshData}
                     onFileOpen={handleFileOpen}
                     onFileEdit={handleFileEdit}
                   />
@@ -312,6 +318,7 @@ function App() {
 
                 {activeTab === "recent" && (
                   <RecentTab
+                    onDataChange={refreshData}
                     files={recentFiles}
                     onFileOpen={handleFileOpen}
                     onFileEdit={handleFileEdit}

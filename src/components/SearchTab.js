@@ -18,7 +18,7 @@ const SearchTab = ({
   onFileOpen,
   onFileEdit,
   sessions,
-  onAdvancedSearch,
+  onDataChange,
 }) => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(null);
@@ -27,8 +27,8 @@ const SearchTab = ({
   const toggleFavorito = async (arquivo) => {
     try {
       await window.electronAPI.toggleFavorito(arquivo.id);
-      // Recarregar resultados
-      window.location.reload();
+      // Notifica o componente pai para recarregar os dados
+      onDataChange();
     } catch (error) {
       console.error("Erro ao alterar favorito:", error);
     }

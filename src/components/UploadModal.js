@@ -37,18 +37,11 @@ const UploadModal = ({ sessions, onClose, onSuccess }) => {
     setIsUploading(true);
 
     try {
-      // Encontrar ID da sessão
-      let sessionId = null;
-      if (selectedSession) {
-        const session = sessions.find((s) => s.nome === selectedSession);
-        sessionId = session ? session.id : null;
-      }
-
       // Salvar no banco de dados (o Electron vai gerenciar o arquivo)
       const arquivo = {
         nome: fileName,
         caminho: selectedFile, // Usar o caminho original por enquanto
-        sessao_id: sessionId,
+        sessao_id: selectedSession ? parseInt(selectedSession, 10) : null,
         palavras_chave: keywords.trim(),
         cliente: cliente.trim(),
         tag_cor: tagCor,
@@ -145,7 +138,7 @@ const UploadModal = ({ sessions, onClose, onSuccess }) => {
             >
               <option value="">Selecione uma sessão</option>
               {sessions.map((session) => (
-                <option key={session.id} value={session.nome}>
+                <option key={session.id} value={session.id}>
                   {session.nome}
                 </option>
               ))}

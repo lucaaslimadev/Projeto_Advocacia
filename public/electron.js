@@ -296,7 +296,8 @@ ipcMain.handle("toggle-favorito", (event, id) => {
     stmt.run(id);
     return true;
   } catch (error) {
-    throw error;
+    console.error("Erro ao favoritar arquivo:", error);
+    throw new Error(`Erro ao favoritar arquivo: ${error.message}`);
   }
 });
 
@@ -306,7 +307,8 @@ ipcMain.handle("update-notas", (event, id, notas) => {
     stmt.run(notas, id);
     return true;
   } catch (error) {
-    throw error;
+    console.error("Erro ao atualizar notas:", error);
+    throw new Error(`Erro ao atualizar notas: ${error.message}`);
   }
 });
 
@@ -316,17 +318,31 @@ ipcMain.handle("update-tag-cor", (event, id, cor) => {
     stmt.run(cor, id);
     return true;
   } catch (error) {
-    throw error;
+    console.error("Erro ao atualizar tag de cor:", error);
+    throw new Error(`Erro ao atualizar tag de cor: ${error.message}`);
   }
 });
 
 ipcMain.handle("delete-arquivo", (event, id) => {
   try {
-    console.log("Tentando excluir arquivo com ID:", id);
+    // Primeiro, buscar o caminho do arquivo no banco de dados
+    const fileToDelete = db
+      .prepare("SELECT caminho FROM arquivos WHERE id = ?")
+      .get(id);
+
+    if (fileToDelete && fileToDelete.caminho) {
+      // Apagar o arquivo físico se ele existir
+      if (fs.existsSync(fileToDelete.caminho)) {
+        fs.unlinkSync(fileToDelete.caminho);
+        console.log(`Arquivo físico excluído: ${fileToDelete.caminho}`);
+      }
+    }
+
+    // Em seguida, remover o registro do banco de dados
     const stmt = db.prepare("DELETE FROM arquivos WHERE id = ?");
     const result = stmt.run(id);
     console.log(
-      "Arquivo excluído com sucesso. Linhas afetadas:",
+      `Registro do arquivo ID ${id} excluído. Linhas afetadas:`,
       result.changes
     );
     return { success: true, changes: result.changes };
@@ -353,7 +369,8 @@ ipcMain.handle("update-arquivo", (event, arquivo) => {
     );
     return true;
   } catch (error) {
-    throw error;
+    console.error("Erro ao atualizar arquivo:", error);
+    throw new Error(`Erro ao atualizar arquivo: ${error.message}`);
   }
 });
 
@@ -401,7 +418,8 @@ ipcMain.handle("search-arquivos-avancado", (event, filtros) => {
     const stmt = db.prepare(query);
     return stmt.all(...params);
   } catch (error) {
-    throw error;
+    console.error("Erro na busca avançada:", error);
+    throw new Error(`Erro na busca avançada: ${error.message}`);
   }
 });
 
@@ -416,7 +434,8 @@ ipcMain.handle("get-arquivos-by-session", (event, sessionId) => {
     `);
     return stmt.all(sessionId);
   } catch (error) {
-    throw error;
+    console.error("Erro ao buscar arquivos da sessão:", error);
+    throw new Error(`Erro ao buscar arquivos da sessão: ${error.message}`);
   }
 });
 

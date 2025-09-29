@@ -11,7 +11,7 @@ import {
   Square,
 } from "lucide-react";
 
-const RecentTab = ({ files, onFileOpen, onFileEdit, title }) => {
+const RecentTab = ({ files, onFileOpen, onFileEdit, title, onDataChange }) => {
   const [selectedFiles, setSelectedFiles] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -51,7 +51,7 @@ const RecentTab = ({ files, onFileOpen, onFileEdit, title }) => {
       }
       setSelectedFiles(new Set());
       alert(`${selectedFiles.size} arquivo(s) excluído(s) com sucesso!`);
-      window.location.reload();
+      onDataChange(); // Notifica o componente pai para recarregar os dados
     } catch (error) {
       console.error("Erro ao excluir arquivos:", error);
       alert("Erro ao excluir arquivos: " + error.message);
