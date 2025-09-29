@@ -1,13 +1,17 @@
 # AdvocaciaApp
 
-Sistema de Petições e Controle de Documentos Jurídicos para advogados.
+Um aplicativo desktop moderno para auxiliar advogados no gerenciamento de petições e documentos jurídicos.
 
 Desenvolvido por **Lucas Lima**.
 
 ---
 
 ## Visão Geral
-Aplicação desktop multiplataforma (Electron + React) para organização, busca, upload e gerenciamento de arquivos jurídicos, com integração a banco de dados local (SQLite) e interface moderna.
+
+Este repositório contém duas implementações da mesma aplicação:
+
+- **Electron + React**: Uma versão com interface moderna e multiplataforma.
+- **Python (Tkinter)**: Uma versão alternativa e mais leve, ideal para ambientes onde o Python já está presente.
 
 ## Estrutura de Pastas
 
@@ -31,47 +35,57 @@ Projeto_Advocacia/
 ## Instalação e Uso
 
 ### 1. Pré-requisitos
+
 - Node.js e npm instalados
 - Python 3.x (opcional, para uso do módulo Python)
 
 ### 2. Instalar dependências
+
 ```bash
 npm install
 ```
 
 ### 3. Rodar em modo desenvolvimento
+
 ```bash
 npm run electron-dev
 ```
 
 ### 4. Gerar instalador para Windows
+
 No Windows, execute:
+
 ```bash
 npm run electron-pack-win
 ```
+
 O instalador será gerado em `dist/`.
 
 ### 5. (Opcional) Usar versão Python
+
 Entre em `advocacia-app/` e siga as instruções do `installer/` para gerar executável com PyInstaller ou Inno Setup.
 
 ## Scripts Importantes
+
 - `npm run electron-dev` — Inicia Electron + React em modo dev
 - `npm run electron-pack-win` — Gera instalador Windows
 - `npm run build` — Gera build de produção do frontend
 
 ## Como subir para o GitHub
+
 1. Faça login no GitHub e crie um novo repositório.
 2. No terminal, dentro da pasta do projeto:
-	```bash
-	git init
-	git add .
-	git commit -m "Projeto AdvocaciaApp - Lucas Lima"
-	git branch -M main
-	git remote add origin https://github.com/SEU_USUARIO/NOME_REPO.git
-	git push -u origin main
-	```
+   ```bash
+   git init
+   git add .
+   git commit -m "Projeto AdvocaciaApp - Lucas Lima"
+   git branch -M main
+   git remote add origin https://github.com/SEU_USUARIO/NOME_REPO.git
+   git push -u origin main
+   ```
 
 ---
+
 **Autor:** Lucas Lima
 
 # Sistema de Petições - Advocacia
@@ -98,17 +112,20 @@ Um aplicativo desktop moderno para auxiliar advogados no gerenciamento de petiç
 ## Instalação e Execução
 
 ### Pré-requisitos
-- Node.js 16+ 
+
+- Node.js 16+
 - npm ou yarn
 
 ### Desenvolvimento
 
 1. Instale as dependências:
+
 ```bash
 npm install
 ```
 
 2. Execute em modo desenvolvimento:
+
 ```bash
 npm run electron-dev
 ```
@@ -116,6 +133,7 @@ npm run electron-dev
 ### Build para Produção
 
 1. Gere o build:
+
 ```bash
 npm run electron-pack
 ```
@@ -150,8 +168,9 @@ public/
 ## Sessões Padrão
 
 O sistema vem com as seguintes sessões pré-configuradas:
+
 - Criminal
-- Cível  
+- Cível
 - Trabalhista
 - Tributário
 - Família
