@@ -371,7 +371,7 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
             {currentStep === 1 ? (
               <button
                 onClick={goToDistribution}
-                disabled={selectedFiles.length === 0}
+                disabled={selectedFiles.length === 0 || isUploading}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 Próximo

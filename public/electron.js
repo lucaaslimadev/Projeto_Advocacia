@@ -212,13 +212,33 @@ ipcMain.handle("get-recent-arquivos", () => {
 
 ipcMain.handle("save-arquivo", (event, arquivo) => {
   try {
+    const userDataPath = app.getPath("userData");
+    const filesDir = path.join(userDataPath, "files");
+    fs.mkdirSync(filesDir, { recursive: true });
+
+    // 1. Copiar o arquivo para o diretório de dados do app
+    const originalPath = arquivo.caminho;
+    const fileExtension = path.extname(originalPath);
+    let newFileName = `${arquivo.nome}${fileExtension}`;
+    let newPath = path.join(filesDir, newFileName);
+
+    // 2. Evitar sobrescrever arquivos com o mesmo nome
+    let counter = 1;
+    while (fs.existsSync(newPath)) {
+      newFileName = `${arquivo.nome}_${counter}${fileExtension}`;
+      newPath = path.join(filesDir, newFileName);
+      counter++;
+    }
+    fs.copyFileSync(originalPath, newPath);
+
+    // 3. Salvar o NOVO caminho no banco de dados
     const stmt = db.prepare(`
       INSERT INTO arquivos (nome, caminho, sessao_id, palavras_chave, cliente, tag_cor, data_criacao) 
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
     const result = stmt.run(
       arquivo.nome,
-      arquivo.caminho,
+      newPath, // Usar o novo caminho
       arquivo.sessao_id,
       arquivo.palavras_chave,
       arquivo.cliente,
@@ -348,7 +368,7 @@ ipcMain.handle("delete-arquivo", (event, id) => {
     return { success: true, changes: result.changes };
   } catch (error) {
     console.error("Erro ao excluir arquivo:", error);
-    throw error;
+    throw new Error(`Erro ao excluir arquivo: ${error.message}`);
   }
 });
 

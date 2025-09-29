@@ -17,7 +17,6 @@ const SearchTab = ({
   query,
   onFileOpen,
   onFileEdit,
-  sessions,
   onDataChange,
 }) => {
   const [showFilterModal, setShowFilterModal] = useState(false);
