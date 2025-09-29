@@ -47,3 +47,31 @@ jobs:
         run: |
           npm install
           npm run build
+
+  build-windows-installer:
+    name: "Create Windows Installer"
+    # Este job precisa rodar em um ambiente Windows
+    runs-on: windows-latest
+    # Opcional: só roda se os outros jobs passarem
+    needs: [python-lint, electron-build]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Windows Installer
+        run: npm run electron-pack-win
+
+      - name: Upload Installer as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/*.exe
