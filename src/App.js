@@ -1,17 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Upload, Settings, FileText, Clock, FolderOpen, Plus, X, UploadCloud } from 'lucide-react';
-import SearchTab from './components/SearchTab';
-import RecentTab from './components/RecentTab';
-import UploadModal from './components/UploadModal';
-import MultiUploadModal from './components/MultiUploadModal';
-import EditFileModal from './components/EditFileModal';
-import SessionsModal from './components/SessionsModal';
-
-const { ipcRenderer } = window.require('electron');
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  Upload,
+  Settings,
+  FileText,
+  Clock,
+  FolderOpen,
+  Plus,
+  X,
+  UploadCloud,
+} from "lucide-react";
+import SearchTab from "./components/SearchTab";
+import RecentTab from "./components/RecentTab";
+import UploadModal from "./components/UploadModal";
+import MultiUploadModal from "./components/MultiUploadModal";
+import EditFileModal from "./components/EditFileModal";
+import SessionsModal from "./components/SessionsModal";
 
 function App() {
-  const [activeTab, setActiveTab] = useState('search');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState("search");
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [recentFiles, setRecentFiles] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -30,19 +38,19 @@ function App() {
 
   const loadSessions = async () => {
     try {
-      const sessoes = await ipcRenderer.invoke('get-sessoes');
+      const sessoes = await window.electronAPI.getSessoes();
       setSessions(sessoes);
     } catch (error) {
-      console.error('Erro ao carregar sessões:', error);
+      console.error("Erro ao carregar sessões:", error);
     }
   };
 
   const loadRecentFiles = async () => {
     try {
-      const arquivos = await ipcRenderer.invoke('get-recent-arquivos');
+      const arquivos = await window.electronAPI.getRecentArquivos();
       setRecentFiles(arquivos);
     } catch (error) {
-      console.error('Erro ao carregar arquivos recentes:', error);
+      console.error("Erro ao carregar arquivos recentes:", error);
     }
   };
 
@@ -53,21 +61,21 @@ function App() {
     }
 
     try {
-      const results = await ipcRenderer.invoke('search-arquivos', query);
+      const results = await window.electronAPI.searchArquivos(query);
       setSearchResults(results);
-      setActiveTab('search');
+      setActiveTab("search");
     } catch (error) {
-      console.error('Erro na pesquisa:', error);
+      console.error("Erro na pesquisa:", error);
     }
   };
 
   const handleFileOpen = async (arquivo) => {
     try {
-      await ipcRenderer.invoke('update-arquivo-access', arquivo.id);
-      await ipcRenderer.invoke('open-file', arquivo.caminho);
+      await window.electronAPI.updateArquivoAccess(arquivo.id);
+      await window.electronAPI.openFile(arquivo.caminho);
       loadRecentFiles();
     } catch (error) {
-      console.error('Erro ao abrir arquivo:', error);
+      console.error("Erro ao abrir arquivo:", error);
     }
   };
 
@@ -98,16 +106,14 @@ function App() {
 
   const handleSessionFilter = async (sessionId) => {
     try {
-      const arquivos = await ipcRenderer.invoke('get-arquivos-by-session', sessionId);
+      const arquivos = await window.electronAPI.getArquivosBySession(sessionId);
       setSessionFiles(arquivos);
       setSelectedSessionFilter(sessionId);
-      setActiveTab('session');
+      setActiveTab("session");
     } catch (error) {
-      console.error('Erro ao carregar arquivos da sessão:', error);
+      console.error("Erro ao carregar arquivos da sessão:", error);
     }
   };
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-gray-800 to-slate-900">
@@ -120,11 +126,15 @@ function App() {
                 <FileText className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">Controle de Documentos Jurídicos</h1>
-                <p className="text-sm text-gray-300 font-medium">Gerenciamento inteligente de documentos jurídicos</p>
+                <h1 className="text-3xl font-bold text-white">
+                  Controle de Documentos Jurídicos
+                </h1>
+                <p className="text-sm text-gray-300 font-medium">
+                  Gerenciamento inteligente de documentos jurídicos
+                </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setShowUploadModal(true)}
@@ -133,7 +143,7 @@ function App() {
                 <Upload className="w-5 h-5" />
                 <span className="font-semibold">Upload</span>
               </button>
-              
+
               <button
                 onClick={() => setShowMultiUploadModal(true)}
                 className="btn-primary flex items-center space-x-3"
@@ -141,7 +151,7 @@ function App() {
                 <UploadCloud className="w-5 h-5" />
                 <span className="font-semibold">Upload Múltiplo</span>
               </button>
-              
+
               <button
                 onClick={() => setShowSessionsModal(true)}
                 className="btn-secondary flex items-center space-x-3"
@@ -170,23 +180,23 @@ function App() {
                 <button
                   onClick={() => {
                     setSelectedSessionFilter(null);
-                    setActiveTab('recent');
+                    setActiveTab("recent");
                   }}
                   className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
                     selectedSessionFilter === null
-                      ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md border border-primary-500'
-                      : 'hover:bg-gray-700/50 text-gray-300 hover:shadow-sm'
+                      ? "bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md border border-primary-500"
+                      : "hover:bg-gray-700/50 text-gray-300 hover:shadow-sm"
                   }`}
                 >
                   📁 Todos os arquivos
                 </button>
                 {sessions.map((session) => {
                   const emojis = {
-                    'Criminal': '⚖️',
-                    'Cível': '🏢',
-                    'Trabalhista': '💼',
-                    'Tributário': '💰',
-                    'Família': '👨‍👩‍👧‍👦'
+                    Criminal: "⚖️",
+                    Cível: "🏢",
+                    Trabalhista: "💼",
+                    Tributário: "💰",
+                    Família: "👨‍👩‍👧‍👦",
                   };
                   return (
                     <button
@@ -194,11 +204,11 @@ function App() {
                       onClick={() => handleSessionFilter(session.id)}
                       className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
                         selectedSessionFilter === session.id
-                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md border border-primary-500'
-                          : 'hover:bg-gray-700/50 text-gray-300 hover:shadow-sm'
+                          ? "bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md border border-primary-500"
+                          : "hover:bg-gray-700/50 text-gray-300 hover:shadow-sm"
                       }`}
                     >
-                      {emojis[session.nome] || '📄'} {session.nome}
+                      {emojis[session.nome] || "📄"} {session.nome}
                     </button>
                   );
                 })}
@@ -226,7 +236,9 @@ function App() {
                 />
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
                   <div className="w-8 h-8 bg-primary-900/50 rounded-lg flex items-center justify-center">
-                    <span className="text-primary-300 text-xs font-bold">⌘K</span>
+                    <span className="text-primary-300 text-xs font-bold">
+                      ⌘K
+                    </span>
                   </div>
                 </div>
               </div>
@@ -237,14 +249,16 @@ function App() {
               <div className="bg-gray-700/50 border-b border-gray-600/50">
                 <nav className="flex px-2">
                   <button
-                    onClick={() => setActiveTab('search')}
+                    onClick={() => setActiveTab("search")}
                     className={`tab-button ${
-                      activeTab === 'search' ? 'tab-active' : 'tab-inactive'
+                      activeTab === "search" ? "tab-active" : "tab-inactive"
                     }`}
                   >
                     <div className="flex items-center space-x-3">
                       <Search className="w-5 h-5" />
-                      <span className="font-semibold">Resultados da Pesquisa</span>
+                      <span className="font-semibold">
+                        Resultados da Pesquisa
+                      </span>
                       {searchResults.length > 0 && (
                         <span className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">
                           {searchResults.length}
@@ -252,11 +266,11 @@ function App() {
                       )}
                     </div>
                   </button>
-                  
+
                   <button
-                    onClick={() => setActiveTab('recent')}
+                    onClick={() => setActiveTab("recent")}
                     className={`tab-button ${
-                      activeTab === 'recent' ? 'tab-active' : 'tab-inactive'
+                      activeTab === "recent" ? "tab-active" : "tab-inactive"
                     }`}
                   >
                     <div className="flex items-center space-x-3">
@@ -267,14 +281,19 @@ function App() {
 
                   {selectedSessionFilter && (
                     <button
-                      onClick={() => setActiveTab('session')}
+                      onClick={() => setActiveTab("session")}
                       className={`tab-button ${
-                        activeTab === 'session' ? 'tab-active' : 'tab-inactive'
+                        activeTab === "session" ? "tab-active" : "tab-inactive"
                       }`}
                     >
                       <div className="flex items-center space-x-3">
                         <FolderOpen className="w-5 h-5" />
-                        <span className="font-semibold">{sessions.find(s => s.id === selectedSessionFilter)?.nome}</span>
+                        <span className="font-semibold">
+                          {
+                            sessions.find((s) => s.id === selectedSessionFilter)
+                              ?.nome
+                          }
+                        </span>
                       </div>
                     </button>
                   )}
@@ -282,29 +301,31 @@ function App() {
               </div>
 
               <div className="p-3">
-                {activeTab === 'search' && (
-                  <SearchTab 
-                    results={searchResults} 
+                {activeTab === "search" && (
+                  <SearchTab
+                    results={searchResults}
                     query={searchQuery}
                     onFileOpen={handleFileOpen}
                     onFileEdit={handleFileEdit}
                   />
                 )}
-                
-                {activeTab === 'recent' && (
-                  <RecentTab 
+
+                {activeTab === "recent" && (
+                  <RecentTab
                     files={recentFiles}
                     onFileOpen={handleFileOpen}
                     onFileEdit={handleFileEdit}
                   />
                 )}
 
-                {activeTab === 'session' && selectedSessionFilter && (
-                  <RecentTab 
+                {activeTab === "session" && selectedSessionFilter && (
+                  <RecentTab
                     files={sessionFiles}
                     onFileOpen={handleFileOpen}
                     onFileEdit={handleFileEdit}
-                    title={`Arquivos da sessão: ${sessions.find(s => s.id === selectedSessionFilter)?.nome}`}
+                    title={`Arquivos da sessão: ${
+                      sessions.find((s) => s.id === selectedSessionFilter)?.nome
+                    }`}
                   />
                 )}
               </div>

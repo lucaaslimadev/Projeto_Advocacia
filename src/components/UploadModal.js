@@ -1,37 +1,36 @@
-import React, { useState } from 'react';
-import { X, Upload, FileText, Tag, FolderOpen } from 'lucide-react';
-
-const { ipcRenderer } = window.require('electron');
-const path = window.require('path');
-const fs = window.require('fs');
+import React, { useState } from "react";
+import { X, Upload, FileText, Tag, FolderOpen } from "lucide-react";
 
 const UploadModal = ({ sessions, onClose, onSuccess }) => {
   const [selectedFile, setSelectedFile] = useState(null);
-  const [fileName, setFileName] = useState('');
-  const [selectedSession, setSelectedSession] = useState('');
-  const [keywords, setKeywords] = useState('');
-  const [cliente, setCliente] = useState('');
-  const [tagCor, setTagCor] = useState('');
+  const [fileName, setFileName] = useState("");
+  const [selectedSession, setSelectedSession] = useState("");
+  const [keywords, setKeywords] = useState("");
+  const [cliente, setCliente] = useState("");
+  const [tagCor, setTagCor] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileSelect = async () => {
     try {
-      const result = await ipcRenderer.invoke('select-file');
+      const result = await window.electronAPI.selectFile();
       if (!result.canceled && result.filePaths.length > 0) {
         const filePath = result.filePaths[0];
-        const baseName = path.basename(filePath, path.extname(filePath));
-        
+        // Replicando a lógica de path.basename sem o módulo 'path'
+        const baseName = filePath
+          .split(/[\\/]/)
+          .pop()
+          .replace(/\.[^/.]+$/, "");
         setSelectedFile(filePath);
         setFileName(baseName);
       }
     } catch (error) {
-      console.error('Erro ao selecionar arquivo:', error);
+      console.error("Erro ao selecionar arquivo:", error);
     }
   };
 
   const handleUpload = async () => {
     if (!selectedFile || !fileName.trim()) {
-      alert('Por favor, selecione um arquivo e defina um nome.');
+      alert("Por favor, selecione um arquivo e defina um nome.");
       return;
     }
 
@@ -41,7 +40,7 @@ const UploadModal = ({ sessions, onClose, onSuccess }) => {
       // Encontrar ID da sessão
       let sessionId = null;
       if (selectedSession) {
-        const session = sessions.find(s => s.nome === selectedSession);
+        const session = sessions.find((s) => s.nome === selectedSession);
         sessionId = session ? session.id : null;
       }
 
@@ -53,16 +52,16 @@ const UploadModal = ({ sessions, onClose, onSuccess }) => {
         palavras_chave: keywords.trim(),
         cliente: cliente.trim(),
         tag_cor: tagCor,
-        data_criacao: new Date().toISOString().split('T')[0]
+        data_criacao: new Date().toISOString().split("T")[0],
       };
 
-      await ipcRenderer.invoke('save-arquivo', arquivo);
-      
-      alert('Arquivo salvo com sucesso!');
+      await window.electronAPI.saveArquivo(arquivo);
+
+      alert("Arquivo salvo com sucesso!");
       onSuccess();
     } catch (error) {
-      console.error('Erro ao fazer upload:', error);
-      alert('Erro ao salvar arquivo: ' + error.message);
+      console.error("Erro ao fazer upload:", error);
+      alert("Erro ao salvar arquivo: " + error.message);
     } finally {
       setIsUploading(false);
     }
@@ -73,7 +72,9 @@ const UploadModal = ({ sessions, onClose, onSuccess }) => {
       <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-sm mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <h2 className="text-lg font-semibold text-white">Upload de Arquivo</h2>
+          <h2 className="text-lg font-semibold text-white">
+            Upload de Arquivo
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-200 transition-colors duration-200"
@@ -97,8 +98,8 @@ const UploadModal = ({ sessions, onClose, onSuccess }) => {
                 <div className="flex items-center justify-center space-x-2">
                   <FileText className="w-6 h-6 text-blue-400" />
                   <div>
-                    <p className="text-sm font-medium text-white">
-                      {path.basename(selectedFile)}
+                    <p className="text-sm font-medium text-white break-all">
+                      {selectedFile.split(/[\\/]/).pop()}
                     </p>
                     <p className="text-xs text-gray-400">Clique para alterar</p>
                   </div>
@@ -189,25 +190,32 @@ const UploadModal = ({ sessions, onClose, onSuccess }) => {
               Tag Colorida (opcional)
             </label>
             <div className="flex space-x-2">
-              {['red', 'blue', 'green', 'yellow', 'purple', 'pink'].map(cor => (
-                <button
-                  key={cor}
-                  type="button"
-                  onClick={() => setTagCor(tagCor === cor ? '' : cor)}
-                  className={`w-6 h-6 rounded-full border-2 transition-colors duration-200 ${
-                    tagCor === cor 
-                      ? 'border-white ring-2 ring-blue-400' 
-                      : 'border-gray-500 hover:border-gray-300'
-                  } ${
-                    cor === 'red' ? 'bg-red-500 hover:bg-red-400' :
-                    cor === 'blue' ? 'bg-blue-500 hover:bg-blue-400' :
-                    cor === 'green' ? 'bg-green-500 hover:bg-green-400' :
-                    cor === 'yellow' ? 'bg-yellow-500 hover:bg-yellow-400' :
-                    cor === 'purple' ? 'bg-purple-500 hover:bg-purple-400' :
-                    'bg-pink-500 hover:bg-pink-400'
-                  }`}
-                />
-              ))}
+              {["red", "blue", "green", "yellow", "purple", "pink"].map(
+                (cor) => (
+                  <button
+                    key={cor}
+                    type="button"
+                    onClick={() => setTagCor(tagCor === cor ? "" : cor)}
+                    className={`w-6 h-6 rounded-full border-2 transition-colors duration-200 ${
+                      tagCor === cor
+                        ? "border-white ring-2 ring-blue-400"
+                        : "border-gray-500 hover:border-gray-300"
+                    } ${
+                      cor === "red"
+                        ? "bg-red-500 hover:bg-red-400"
+                        : cor === "blue"
+                        ? "bg-blue-500 hover:bg-blue-400"
+                        : cor === "green"
+                        ? "bg-green-500 hover:bg-green-400"
+                        : cor === "yellow"
+                        ? "bg-yellow-500 hover:bg-yellow-400"
+                        : cor === "purple"
+                        ? "bg-purple-500 hover:bg-purple-400"
+                        : "bg-pink-500 hover:bg-pink-400"
+                    }`}
+                  />
+                )
+              )}
             </div>
           </div>
         </div>
@@ -226,7 +234,7 @@ const UploadModal = ({ sessions, onClose, onSuccess }) => {
             disabled={!selectedFile || !fileName.trim() || isUploading}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
           >
-            {isUploading ? 'Salvando...' : 'Salvar Arquivo'}
+            {isUploading ? "Salvando..." : "Salvar Arquivo"}
           </button>
         </div>
       </div>

@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
-import { X, Upload, FileText, FolderOpen, Check, ArrowRight } from 'lucide-react';
-
-const { ipcRenderer } = window.require('electron');
-const path = window.require('path');
+import React, { useState } from "react";
+import {
+  X,
+  Upload,
+  FileText,
+  FolderOpen,
+  Check,
+  ArrowRight,
+} from "lucide-react";
 
 const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -11,29 +15,32 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
 
   const handleMultiFileSelect = async () => {
     try {
-      console.log('Tentando abrir seletor de arquivos...');
-      const result = await ipcRenderer.invoke('select-multiple-files');
-      console.log('Resultado do seletor:', result);
-      
+      console.log("Tentando abrir seletor de arquivos...");
+      const result = await window.electronAPI.selectMultipleFiles();
+      console.log("Resultado do seletor:", result);
+
       if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
-        const files = result.filePaths.map(filePath => ({
+        const files = result.filePaths.map((filePath) => ({
           path: filePath,
-          name: path.basename(filePath, path.extname(filePath)),
-          originalName: path.basename(filePath),
+          name: filePath
+            .split(/[\\/]/)
+            .pop()
+            .replace(/\.[^/.]+$/, ""),
+          originalName: filePath.split(/[\\/]/).pop(),
           sessionId: null,
-          sessionName: '',
-          keywords: '',
-          cliente: '',
-          tagCor: ''
+          sessionName: "",
+          keywords: "",
+          cliente: "",
+          tagCor: "",
         }));
-        console.log('Arquivos processados:', files);
+        console.log("Arquivos processados:", files);
         setSelectedFiles(files);
       } else {
-        console.log('Nenhum arquivo selecionado ou operação cancelada');
+        console.log("Nenhum arquivo selecionado ou operação cancelada");
       }
     } catch (error) {
-      console.error('Erro ao selecionar arquivos:', error);
-      alert('Erro ao abrir seletor de arquivos: ' + error.message);
+      console.error("Erro ao selecionar arquivos:", error);
+      alert("Erro ao abrir seletor de arquivos: " + error.message);
     }
   };
 
@@ -57,7 +64,7 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
 
   const handleUploadAll = async () => {
     if (selectedFiles.length === 0) {
-      alert('Nenhum arquivo selecionado.');
+      alert("Nenhum arquivo selecionado.");
       return;
     }
 
@@ -72,17 +79,17 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
           palavras_chave: file.keywords.trim(),
           cliente: file.cliente.trim(),
           tag_cor: file.tagCor,
-          data_criacao: new Date().toISOString().split('T')[0]
+          data_criacao: new Date().toISOString().split("T")[0],
         };
 
-        await ipcRenderer.invoke('save-arquivo', arquivo);
+        await window.electronAPI.saveArquivo(arquivo);
       }
-      
+
       alert(`${selectedFiles.length} arquivo(s) salvos com sucesso!`);
       onSuccess();
     } catch (error) {
-      console.error('Erro ao fazer upload:', error);
-      alert('Erro ao salvar arquivos: ' + error.message);
+      console.error("Erro ao fazer upload:", error);
+      alert("Erro ao salvar arquivos: " + error.message);
     } finally {
       setIsUploading(false);
     }
@@ -90,7 +97,7 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
 
   const goToDistribution = () => {
     if (selectedFiles.length === 0) {
-      alert('Selecione pelo menos um arquivo.');
+      alert("Selecione pelo menos um arquivo.");
       return;
     }
     setCurrentStep(2);
@@ -103,18 +110,26 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-semibold text-white">
-              {currentStep === 1 ? 'Upload Múltiplo' : 'Distribuir Arquivos'}
+              {currentStep === 1 ? "Upload Múltiplo" : "Distribuir Arquivos"}
             </h2>
             <div className="flex items-center space-x-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-600 text-gray-300'
-              }`}>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  currentStep >= 1
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-600 text-gray-300"
+                }`}
+              >
                 1
               </div>
               <ArrowRight className="w-4 h-4 text-gray-400" />
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-600 text-gray-300'
-              }`}>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  currentStep >= 2
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-600 text-gray-300"
+                }`}
+              >
                 2
               </div>
             </div>
@@ -159,11 +174,16 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
                   </h3>
                   <div className="space-y-3 max-h-60 overflow-y-auto">
                     {selectedFiles.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-800 rounded-lg p-3">
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-gray-800 rounded-lg p-3"
+                      >
                         <div className="flex items-center space-x-3">
                           <FileText className="w-5 h-5 text-blue-400" />
                           <div>
-                            <p className="text-sm font-medium text-white">{file.originalName}</p>
+                            <p className="text-sm font-medium text-white">
+                              {file.originalName}
+                            </p>
                             <p className="text-xs text-gray-400">{file.path}</p>
                           </div>
                         </div>
@@ -205,7 +225,9 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
                           <input
                             type="text"
                             value={file.name}
-                            onChange={(e) => updateFileField(index, 'name', e.target.value)}
+                            onChange={(e) =>
+                              updateFileField(index, "name", e.target.value)
+                            }
                             className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                         </div>
@@ -218,11 +240,18 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
                               Sessão
                             </label>
                             <select
-                              value={file.sessionId || ''}
+                              value={file.sessionId || ""}
                               onChange={(e) => {
                                 const sessionId = e.target.value;
-                                const sessionName = sessions.find(s => s.id.toString() === sessionId)?.nome || '';
-                                updateFileSession(index, sessionId ? parseInt(sessionId) : null, sessionName);
+                                const sessionName =
+                                  sessions.find(
+                                    (s) => s.id.toString() === sessionId
+                                  )?.nome || "";
+                                updateFileSession(
+                                  index,
+                                  sessionId ? parseInt(sessionId) : null,
+                                  sessionName
+                                );
                               }}
                               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
@@ -243,7 +272,13 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
                             <input
                               type="text"
                               value={file.cliente}
-                              onChange={(e) => updateFileField(index, 'cliente', e.target.value)}
+                              onChange={(e) =>
+                                updateFileField(
+                                  index,
+                                  "cliente",
+                                  e.target.value
+                                )
+                              }
                               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               placeholder="Nome do cliente"
                             />
@@ -258,7 +293,9 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
                           <input
                             type="text"
                             value={file.keywords}
-                            onChange={(e) => updateFileField(index, 'keywords', e.target.value)}
+                            onChange={(e) =>
+                              updateFileField(index, "keywords", e.target.value)
+                            }
                             className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Palavras-chave separadas por vírgula"
                           />
@@ -270,22 +307,40 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
                             Tag Colorida
                           </label>
                           <div className="flex space-x-2">
-                            {['red', 'blue', 'green', 'yellow', 'purple', 'pink'].map(cor => (
+                            {[
+                              "red",
+                              "blue",
+                              "green",
+                              "yellow",
+                              "purple",
+                              "pink",
+                            ].map((cor) => (
                               <button
                                 key={cor}
                                 type="button"
-                                onClick={() => updateFileField(index, 'tagCor', file.tagCor === cor ? '' : cor)}
+                                onClick={() =>
+                                  updateFileField(
+                                    index,
+                                    "tagCor",
+                                    file.tagCor === cor ? "" : cor
+                                  )
+                                }
                                 className={`w-6 h-6 rounded-full border-2 transition-colors duration-200 ${
-                                  file.tagCor === cor 
-                                    ? 'border-white ring-2 ring-blue-400' 
-                                    : 'border-gray-500 hover:border-gray-300'
+                                  file.tagCor === cor
+                                    ? "border-white ring-2 ring-blue-400"
+                                    : "border-gray-500 hover:border-gray-300"
                                 } ${
-                                  cor === 'red' ? 'bg-red-500 hover:bg-red-400' :
-                                  cor === 'blue' ? 'bg-blue-500 hover:bg-blue-400' :
-                                  cor === 'green' ? 'bg-green-500 hover:bg-green-400' :
-                                  cor === 'yellow' ? 'bg-yellow-500 hover:bg-yellow-400' :
-                                  cor === 'purple' ? 'bg-purple-500 hover:bg-purple-400' :
-                                  'bg-pink-500 hover:bg-pink-400'
+                                  cor === "red"
+                                    ? "bg-red-500 hover:bg-red-400"
+                                    : cor === "blue"
+                                    ? "bg-blue-500 hover:bg-blue-400"
+                                    : cor === "green"
+                                    ? "bg-green-500 hover:bg-green-400"
+                                    : cor === "yellow"
+                                    ? "bg-yellow-500 hover:bg-yellow-400"
+                                    : cor === "purple"
+                                    ? "bg-purple-500 hover:bg-purple-400"
+                                    : "bg-pink-500 hover:bg-pink-400"
                                 }`}
                               />
                             ))}
@@ -303,7 +358,8 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-gray-700">
           <div className="text-sm text-gray-400">
-            {selectedFiles.length > 0 && `${selectedFiles.length} arquivo(s) selecionado(s)`}
+            {selectedFiles.length > 0 &&
+              `${selectedFiles.length} arquivo(s) selecionado(s)`}
           </div>
           <div className="flex items-center space-x-3">
             {currentStep === 2 && (
@@ -336,7 +392,7 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
                 disabled={isUploading}
                 className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
-                {isUploading ? 'Salvando...' : 'Salvar Todos'}
+                {isUploading ? "Salvando..." : "Salvar Todos"}
               </button>
             )}
           </div>

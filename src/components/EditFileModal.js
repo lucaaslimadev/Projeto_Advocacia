@@ -1,39 +1,39 @@
-import React, { useState } from 'react';
-import { X, Save, FolderOpen, Tag, User } from 'lucide-react';
-
-const { ipcRenderer } = window.require('electron');
+import React, { useState } from "react";
+import { X, Save, FolderOpen, Tag, User } from "lucide-react";
 
 const EditFileModal = ({ arquivo, sessions, onClose, onSuccess }) => {
   const [nome, setNome] = useState(arquivo.nome);
-  const [selectedSession, setSelectedSession] = useState(arquivo.sessao_id || '');
-  const [keywords, setKeywords] = useState(arquivo.palavras_chave || '');
-  const [cliente, setCliente] = useState(arquivo.cliente || '');
-  const [tagCor, setTagCor] = useState(arquivo.tag_cor || '');
+  const [selectedSession, setSelectedSession] = useState(
+    arquivo.sessao_id || ""
+  );
+  const [keywords, setKeywords] = useState(arquivo.palavras_chave || "");
+  const [cliente, setCliente] = useState(arquivo.cliente || "");
+  const [tagCor, setTagCor] = useState(arquivo.tag_cor || "");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     if (!nome.trim()) {
-      alert('Por favor, defina um nome para o arquivo.');
+      alert("Por favor, defina um nome para o arquivo.");
       return;
     }
 
     setIsSaving(true);
 
     try {
-      await ipcRenderer.invoke('update-arquivo', {
+      await window.electronAPI.updateArquivo({
         id: arquivo.id,
         nome: nome.trim(),
         sessao_id: selectedSession || null,
         palavras_chave: keywords.trim(),
         cliente: cliente.trim(),
-        tag_cor: tagCor
+        tag_cor: tagCor,
       });
-      
-      alert('Arquivo atualizado com sucesso!');
+
+      alert("Arquivo atualizado com sucesso!");
       onSuccess();
     } catch (error) {
-      console.error('Erro ao atualizar arquivo:', error);
-      alert('Erro ao atualizar arquivo: ' + error.message);
+      console.error("Erro ao atualizar arquivo:", error);
+      alert("Erro ao atualizar arquivo: " + error.message);
     } finally {
       setIsSaving(false);
     }
@@ -125,25 +125,32 @@ const EditFileModal = ({ arquivo, sessions, onClose, onSuccess }) => {
               Tag Colorida
             </label>
             <div className="flex space-x-2">
-              {['red', 'blue', 'green', 'yellow', 'purple', 'pink'].map(cor => (
-                <button
-                  key={cor}
-                  type="button"
-                  onClick={() => setTagCor(tagCor === cor ? '' : cor)}
-                  className={`w-6 h-6 rounded-full border-2 transition-colors duration-200 ${
-                    tagCor === cor 
-                      ? 'border-white ring-2 ring-blue-400' 
-                      : 'border-gray-500 hover:border-gray-300'
-                  } ${
-                    cor === 'red' ? 'bg-red-500 hover:bg-red-400' :
-                    cor === 'blue' ? 'bg-blue-500 hover:bg-blue-400' :
-                    cor === 'green' ? 'bg-green-500 hover:bg-green-400' :
-                    cor === 'yellow' ? 'bg-yellow-500 hover:bg-yellow-400' :
-                    cor === 'purple' ? 'bg-purple-500 hover:bg-purple-400' :
-                    'bg-pink-500 hover:bg-pink-400'
-                  }`}
-                />
-              ))}
+              {["red", "blue", "green", "yellow", "purple", "pink"].map(
+                (cor) => (
+                  <button
+                    key={cor}
+                    type="button"
+                    onClick={() => setTagCor(tagCor === cor ? "" : cor)}
+                    className={`w-6 h-6 rounded-full border-2 transition-colors duration-200 ${
+                      tagCor === cor
+                        ? "border-white ring-2 ring-blue-400"
+                        : "border-gray-500 hover:border-gray-300"
+                    } ${
+                      cor === "red"
+                        ? "bg-red-500 hover:bg-red-400"
+                        : cor === "blue"
+                        ? "bg-blue-500 hover:bg-blue-400"
+                        : cor === "green"
+                        ? "bg-green-500 hover:bg-green-400"
+                        : cor === "yellow"
+                        ? "bg-yellow-500 hover:bg-yellow-400"
+                        : cor === "purple"
+                        ? "bg-purple-500 hover:bg-purple-400"
+                        : "bg-pink-500 hover:bg-pink-400"
+                    }`}
+                  />
+                )
+              )}
             </div>
           </div>
         </div>
@@ -163,7 +170,7 @@ const EditFileModal = ({ arquivo, sessions, onClose, onSuccess }) => {
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center space-x-2"
           >
             <Save className="w-4 h-4" />
-            <span>{isSaving ? 'Salvando...' : 'Salvar'}</span>
+            <span>{isSaving ? "Salvando..." : "Salvar"}</span>
           </button>
         </div>
       </div>
