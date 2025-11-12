@@ -20,8 +20,8 @@ const EditFileModal = ({ arquivo, sessions, onClose, onSuccess }) => {
     setIsSaving(true);
 
     try {
-      await window.electronAPI.updateArquivo({
-        id: arquivo.id,
+      const { arquivosAPI } = require('../services/api');
+      await arquivosAPI.update(arquivo.id, {
         nome: nome.trim(),
         sessao_id: selectedSession || null,
         palavras_chave: keywords.trim(),

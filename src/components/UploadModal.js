@@ -10,21 +10,12 @@ const UploadModal = ({ sessions, onClose, onSuccess }) => {
   const [tagCor, setTagCor] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileSelect = async () => {
-    try {
-      const result = await window.electronAPI.selectFile();
-      if (!result.canceled && result.filePaths.length > 0) {
-        const filePath = result.filePaths[0];
-        // Replicando a lógica de path.basename sem o módulo 'path'
-        const baseName = filePath
-          .split(/[\\/]/)
-          .pop()
-          .replace(/\.[^/.]+$/, "");
-        setSelectedFile(filePath);
-        setFileName(baseName);
-      }
-    } catch (error) {
-      console.error("Erro ao selecionar arquivo:", error);
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      const baseName = file.name.replace(/\.[^/.]+$/, "");
+      setFileName(baseName);
     }
   };
 
@@ -37,18 +28,25 @@ const UploadModal = ({ sessions, onClose, onSuccess }) => {
     setIsUploading(true);
 
     try {
-      // Salvar no banco de dados (o Electron vai gerenciar o arquivo)
-      const arquivo = {
-        nome: fileName,
-        caminho: selectedFile, // Usar o caminho original por enquanto
-        sessao_id: selectedSession ? parseInt(selectedSession, 10) : null,
-        palavras_chave: keywords.trim(),
-        cliente: cliente.trim(),
-        tag_cor: tagCor,
-        data_criacao: new Date().toISOString().split("T")[0],
-      };
+      const formData = new FormData();
+      formData.append('arquivo', selectedFile);
+      formData.append('nome', fileName);
+      if (selectedSession) {
+        formData.append('sessao_id', selectedSession);
+      }
+      if (keywords.trim()) {
+        formData.append('palavras_chave', keywords.trim());
+      }
+      if (cliente.trim()) {
+        formData.append('cliente', cliente.trim());
+      }
+      if (tagCor) {
+        formData.append('tag_cor', tagCor);
+      }
+      formData.append('data_criacao', new Date().toISOString().split("T")[0]);
 
-      await window.electronAPI.saveArquivo(arquivo);
+      const { arquivosAPI } = require('../services/api');
+      await arquivosAPI.upload(formData);
 
       alert("Arquivo salvo com sucesso!");
       onSuccess();
@@ -83,32 +81,37 @@ const UploadModal = ({ sessions, onClose, onSuccess }) => {
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Selecionar Arquivo
             </label>
-            <div
-              onClick={handleFileSelect}
-              className="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center hover:border-blue-500 hover:bg-gray-800 transition-all duration-200 cursor-pointer"
-            >
-              {selectedFile ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <FileText className="w-6 h-6 text-blue-400" />
-                  <div>
-                    <p className="text-sm font-medium text-white break-all">
-                      {selectedFile.split(/[\\/]/).pop()}
-                    </p>
-                    <p className="text-xs text-gray-400">Clique para alterar</p>
+            <label className="block">
+              <div className="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center hover:border-blue-500 hover:bg-gray-800 transition-all duration-200 cursor-pointer">
+                {selectedFile ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <FileText className="w-6 h-6 text-blue-400" />
+                    <div>
+                      <p className="text-sm font-medium text-white break-all">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-xs text-gray-400">Clique para alterar</p>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div>
-                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-300">
-                    Clique para selecionar um arquivo
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    PDF, DOC, DOCX, TXT
-                  </p>
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div>
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-300">
+                      Clique para selecionar um arquivo
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      PDF, DOC, DOCX, TXT
+                    </p>
+                  </div>
+                )}
+              </div>
+              <input
+                type="file"
+                onChange={handleFileSelect}
+                accept=".pdf,.doc,.docx,.txt"
+                className="hidden"
+              />
+            </label>
           </div>
 
           {/* File Name */}

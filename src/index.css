@@ -34,7 +34,7 @@
   }
   
   .tab-button {
-    @apply relative px-6 py-4 font-semibold text-sm transition-all duration-300 rounded-t-xl;
+    @apply relative px-8 py-5 font-semibold text-base transition-all duration-300 rounded-t-xl;
   }
   
   .tab-active {
@@ -46,7 +46,7 @@
   }
   
   .file-card {
-    @apply bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 hover:shadow-2xl hover:border-primary-500/50 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 backdrop-blur-sm;
+    @apply bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 mb-4 hover:shadow-2xl hover:border-primary-500/50 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 backdrop-blur-sm;
   }
   
   .icon-button {

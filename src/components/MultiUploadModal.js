@@ -13,35 +13,18 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
   const [currentStep, setCurrentStep] = useState(1); // 1: Upload, 2: Distribuir
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleMultiFileSelect = async () => {
-    try {
-      console.log("Tentando abrir seletor de arquivos...");
-      const result = await window.electronAPI.selectMultipleFiles();
-      console.log("Resultado do seletor:", result);
-
-      if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
-        const files = result.filePaths.map((filePath) => ({
-          path: filePath,
-          name: filePath
-            .split(/[\\/]/)
-            .pop()
-            .replace(/\.[^/.]+$/, ""),
-          originalName: filePath.split(/[\\/]/).pop(),
-          sessionId: null,
-          sessionName: "",
-          keywords: "",
-          cliente: "",
-          tagCor: "",
-        }));
-        console.log("Arquivos processados:", files);
-        setSelectedFiles(files);
-      } else {
-        console.log("Nenhum arquivo selecionado ou operação cancelada");
-      }
-    } catch (error) {
-      console.error("Erro ao selecionar arquivos:", error);
-      alert("Erro ao abrir seletor de arquivos: " + error.message);
-    }
+  const handleMultiFileSelect = (e) => {
+    const files = Array.from(e.target.files).map((file) => ({
+      file: file,
+      name: file.name.replace(/\.[^/.]+$/, ""),
+      originalName: file.name,
+      sessionId: null,
+      sessionName: "",
+      keywords: "",
+      cliente: "",
+      tagCor: "",
+    }));
+    setSelectedFiles(files);
   };
 
   const updateFileField = (index, field, value) => {
@@ -64,19 +47,25 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
     setIsUploading(true);
 
     try {
-      for (const file of selectedFiles) {
-        const arquivo = {
-          nome: file.name,
-          caminho: file.path,
-          sessao_id: file.sessionId,
-          palavras_chave: file.keywords.trim(),
-          cliente: file.cliente.trim(),
-          tag_cor: file.tagCor,
-          data_criacao: new Date().toISOString().split("T")[0],
-        };
+      const formData = new FormData();
+      const arquivosData = [];
 
-        await window.electronAPI.saveArquivo(arquivo);
-      }
+      selectedFiles.forEach((fileData) => {
+      formData.append('arquivos', fileData.file);
+      arquivosData.push({
+        nome: fileData.name,
+        sessao_id: fileData.sessionId || null,
+        palavras_chave: fileData.keywords.trim() || null,
+        cliente: fileData.cliente.trim() || null,
+        tag_cor: fileData.tagCor || null,
+        data_criacao: new Date().toISOString().split("T")[0],
+      });
+    });
+
+    formData.append('arquivosData', JSON.stringify(arquivosData));
+
+      const { arquivosAPI } = require('../services/api');
+      await arquivosAPI.uploadMultiple(formData);
 
       alert(`${selectedFiles.length} arquivo(s) salvos com sucesso!`);
       onSuccess();
@@ -145,18 +134,24 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Selecionar Arquivos
                 </label>
-                <div
-                  onClick={handleMultiFileSelect}
-                  className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center hover:border-blue-500 hover:bg-gray-800 transition-all duration-200 cursor-pointer"
-                >
-                  <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-lg text-gray-300 mb-2">
-                    Clique para selecionar múltiplos arquivos
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    PDF, DOC, DOCX, TXT - Segure Ctrl/Cmd para selecionar vários
-                  </p>
-                </div>
+                <label className="block">
+                  <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center hover:border-blue-500 hover:bg-gray-800 transition-all duration-200 cursor-pointer">
+                    <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-lg text-gray-300 mb-2">
+                      Clique para selecionar múltiplos arquivos
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      PDF, DOC, DOCX, TXT - Segure Ctrl/Cmd para selecionar vários
+                    </p>
+                  </div>
+                  <input
+                    type="file"
+                    onChange={handleMultiFileSelect}
+                    accept=".pdf,.doc,.docx,.txt"
+                    multiple
+                    className="hidden"
+                  />
+                </label>
               </div>
 
               {/* Selected Files List */}
@@ -177,7 +172,9 @@ const MultiUploadModal = ({ sessions, onClose, onSuccess }) => {
                             <p className="text-sm font-medium text-white">
                               {file.originalName}
                             </p>
-                            <p className="text-xs text-gray-400">{file.path}</p>
+                            <p className="text-xs text-gray-400">
+                              {(file.file?.size / 1024).toFixed(2)} KB
+                            </p>
                           </div>
                         </div>
                         <button

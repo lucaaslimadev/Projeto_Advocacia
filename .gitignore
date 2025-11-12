@@ -1,23 +1,69 @@
-# .gitignore
-# Node
+# Dependencies
 node_modules/
-dist/
+node_modules 2/
+package-lock 2.json
+
+# Build outputs
 build/
-.env
+dist/
 *.log
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Server uploads (arquivos dos usuários)
+server/uploads/
+server/uploads/**/*
+
+# Database (não versionar banco de dados)
+*.db
+*.sqlite
+*.sqlite3
 
 # Python
 __pycache__/
-*.pyc
-data/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
 
-# MacOS
+# Electron (mantido para referência)
+# Mas não precisa mais se for só web
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Electron/React
-*.local
-*.cache
-
-# Installer outputs
-advocacia-app/installer/*.exe
-advocacia-app/installer/*.iss.bak
+# Temporary files
+*.tmp
+*.temp
+.cache/

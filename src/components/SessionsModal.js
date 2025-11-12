@@ -14,7 +14,8 @@ const SessionsModal = ({ sessions, onClose, onUpdate }) => {
     setIsCreating(true);
 
     try {
-      await window.electronAPI.createSessao(newSessionName.trim());
+      const { sessoesAPI } = require('../services/api');
+      await sessoesAPI.create(newSessionName.trim());
       setNewSessionName("");
       onUpdate(); // Atualiza a lista sem fechar o modal
     } catch (error) {
@@ -32,7 +33,8 @@ const SessionsModal = ({ sessions, onClose, onUpdate }) => {
       )
     ) {
       try {
-        await window.electronAPI.deleteSessao(sessionId);
+        const { sessoesAPI } = require('../services/api');
+        await sessoesAPI.delete(sessionId);
         onUpdate(); // Atualiza a lista sem fechar o modal
       } catch (error) {
         console.error("Erro ao excluir sessão:", error);

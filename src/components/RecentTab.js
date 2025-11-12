@@ -46,11 +46,13 @@ const RecentTab = ({ files, onFileOpen, onFileEdit, title, onDataChange }) => {
 
     setIsDeleting(true);
     try {
+      const { arquivosAPI } = require('../services/api');
+      const count = selectedFiles.size;
       for (const fileId of selectedFiles) {
-        await window.electronAPI.deleteArquivo(fileId);
+        await arquivosAPI.delete(fileId);
       }
       setSelectedFiles(new Set());
-      alert(`${selectedFiles.size} arquivo(s) excluído(s) com sucesso!`);
+      alert(`${count} arquivo(s) excluído(s) com sucesso!`);
       onDataChange(); // Notifica o componente pai para recarregar os dados
     } catch (error) {
       console.error("Erro ao excluir arquivos:", error);
@@ -136,9 +138,9 @@ const RecentTab = ({ files, onFileOpen, onFileEdit, title, onDataChange }) => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium text-white">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-semibold text-white">
           {title || `Arquivos Recentes (${files.length})`}
         </h3>
         {files.length > 0 && (
@@ -172,11 +174,11 @@ const RecentTab = ({ files, onFileOpen, onFileEdit, title, onDataChange }) => {
         )}
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-4">
         {files.map((arquivo) => (
           <div
             key={arquivo.id}
-            className="bg-gray-800/30 rounded-lg p-3 hover:bg-gray-700/50 transition-all duration-200"
+            className="bg-gray-800/30 rounded-xl p-5 hover:bg-gray-700/50 transition-all duration-200 border border-gray-700/30"
           >
             <div className="flex items-start space-x-3">
               <div className="flex items-center space-x-2">

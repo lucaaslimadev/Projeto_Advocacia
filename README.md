@@ -1,186 +1,222 @@
-# AdvocaciaApp
+# 📚 Sistema de Advocacia - Gerenciamento de Documentos Jurídicos
 
-Um aplicativo desktop moderno para auxiliar advogados no gerenciamento de petições e documentos jurídicos.
+Sistema web completo para gerenciamento de documentos jurídicos, desenvolvido para escritórios de advocacia.
 
-Desenvolvido por **Lucas Lima**.
+## 🚀 Tecnologias
 
----
+### Frontend
+- **React 18** - Biblioteca JavaScript para interfaces
+- **Tailwind CSS** - Framework CSS utilitário
+- **React Router** - Roteamento
+- **Lucide React** - Ícones modernos
 
-## Visão Geral
+### Backend
+- **Node.js** - Runtime JavaScript
+- **Express** - Framework web
+- **PostgreSQL** - Banco de dados relacional
+- **JWT** - Autenticação
+- **Multer** - Upload de arquivos
+- **bcryptjs** - Hash de senhas
 
-Este repositório contém duas implementações da mesma aplicação:
+## 📋 Funcionalidades
 
-- **Electron + React**: Uma versão com interface moderna e multiplataforma.
-- **Python (Tkinter)**: Uma versão alternativa e mais leve, ideal para ambientes onde o Python já está presente.
+- ✅ **Autenticação de usuários** (Login/Registro)
+- ✅ **Upload de arquivos** (PDF, DOC, DOCX, TXT)
+- ✅ **Upload múltiplo** de arquivos
+- ✅ **Organização por sessões** (Criminal, Cível, Trabalhista, etc.)
+- ✅ **Pesquisa inteligente** por nome ou palavras-chave
+- ✅ **Arquivos recentes** (últimos 20 acessados)
+- ✅ **Edição de metadados** (nome, cliente, tags, etc.)
+- ✅ **Download de arquivos**
+- ✅ **Painel administrativo** (gerenciar usuários)
+- ✅ **Sistema de tags coloridas**
+- ✅ **Favoritos**
+- ✅ **Notas por arquivo**
 
-## Estrutura de Pastas
-
-```
-Projeto_Advocacia/
-│
-├── src/                # Código-fonte React (frontend Electron)
-├── public/             # Arquivos públicos e electron.js (main Electron)
-├── build/              # Build frontend (gerado)
-├── dist/               # Instaladores gerados (Electron Builder)
-├── docs/               # Documentação adicional
-├── advocacia-app/      # Módulo Python (Tkinter, scripts, instalador alternativo)
-│   ├── src/            # Código Python principal
-│   └── installer/      # Scripts de build e instalador Inno Setup
-├── package.json        # Configuração Node/Electron
-├── requirements.txt    # Dependências Python
-├── LICENSE             # Licença MIT
-└── README.md           # Este arquivo
-```
-
-## Instalação e Uso
-
-### 1. Pré-requisitos
-
-- Node.js e npm instalados
-- Python 3.x (opcional, para uso do módulo Python)
-
-### 2. Instalar dependências
-
-```bash
-npm install
-```
-
-### 3. Rodar em modo desenvolvimento
-
-```bash
-npm run electron-dev
-```
-
-### 4. Gerar instalador para Windows
-
-No Windows, execute:
-
-```bash
-npm run electron-pack-win
-```
-
-O instalador será gerado em `dist/`.
-
-### 5. (Opcional) Usar versão Python
-
-Entre em `advocacia-app/` e siga as instruções do `installer/` para gerar executável com PyInstaller ou Inno Setup.
-
-## Scripts Importantes
-
-- `npm run electron-dev` — Inicia Electron + React em modo dev
-- `npm run electron-pack-win` — Gera instalador Windows
-- `npm run build` — Gera build de produção do frontend
-
-## Como subir para o GitHub
-
-1. Faça login no GitHub e crie um novo repositório.
-2. No terminal, dentro da pasta do projeto:
-   ```bash
-   git init
-   git add .
-   git commit -m "Projeto AdvocaciaApp - Lucas Lima"
-   git branch -M main
-   git remote add origin https://github.com/SEU_USUARIO/NOME_REPO.git
-   git push -u origin main
-   ```
-
----
-
-**Autor:** Lucas Lima
-
-# Sistema de Petições - Advocacia
-
-Um aplicativo desktop moderno para auxiliar advogados no gerenciamento de petições e documentos jurídicos.
-
-## Funcionalidades
-
-- 🔍 **Pesquisa Inteligente**: Encontre documentos rapidamente por nome ou palavras-chave
-- 📁 **Organização por Sessões**: Organize documentos em categorias (Criminal, Cível, Trabalhista, etc.)
-- ⏰ **Arquivos Recentes**: Acesso rápido aos documentos utilizados recentemente
-- 🏷️ **Sistema de Tags**: Adicione palavras-chave para facilitar a busca
-- 💾 **Banco SQLite**: Armazenamento local seguro e rápido
-- 🎨 **Interface Moderna**: Design intuitivo com React e Tailwind CSS
-
-## Tecnologias Utilizadas
-
-- **Frontend**: React 18 + Tailwind CSS
-- **Desktop**: Electron
-- **Banco de Dados**: SQLite3
-- **Ícones**: Lucide React
-- **Build**: Electron Builder
-
-## Instalação e Execução
+## 🛠️ Instalação
 
 ### Pré-requisitos
 
 - Node.js 16+
+- PostgreSQL 14+
 - npm ou yarn
 
-### Desenvolvimento
-
-1. Instale as dependências:
+### 1. Clone o repositório
 
 ```bash
+git clone https://github.com/SEU_USUARIO/Projeto_Advocacia.git
+cd Projeto_Advocacia
+```
+
+### 2. Instalar dependências
+
+```bash
+# Frontend
 npm install
+
+# Backend
+cd server
+npm install
+cd ..
 ```
 
-2. Execute em modo desenvolvimento:
+### 3. Configurar banco de dados
 
 ```bash
-npm run electron-dev
+# Criar banco de dados
+createdb advocacia_db
+
+# Executar migrations
+export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"  # macOS
+psql -U seu_usuario -d advocacia_db -f server/migrations/001_initial_schema.sql
 ```
 
-### Build para Produção
+### 4. Configurar variáveis de ambiente
 
-1. Gere o build:
+**Backend** (`server/.env`):
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=advocacia_db
+DB_USER=seu_usuario
+DB_PASSWORD=sua_senha
+
+JWT_SECRET=seu_jwt_secret_super_seguro_aqui
+JWT_EXPIRES_IN=7d
+
+PORT=5001
+NODE_ENV=development
+
+MAX_FILE_SIZE=10485760
+UPLOAD_DIR=./uploads
+```
+
+**Frontend** (raiz `.env`):
+```env
+REACT_APP_API_URL=http://localhost:5001/api
+```
+
+### 5. Iniciar aplicação
 
 ```bash
-npm run electron-pack
+# Terminal 1 - Backend
+cd server
+npm run dev
+
+# Terminal 2 - Frontend
+npm start
 ```
 
-2. O executável será gerado na pasta `dist/`
+Acesse: http://localhost:3000
 
-## Estrutura do Projeto
+## 👤 Credenciais Padrão
+
+Após a primeira execução, um usuário admin é criado automaticamente:
+
+- **Email**: `admin@advocacia.com`
+- **Senha**: `admin123`
+
+⚠️ **IMPORTANTE**: Altere a senha em produção!
+
+## 📁 Estrutura do Projeto
 
 ```
-src/
-├── components/
-│   ├── SearchTab.js      # Aba de resultados de pesquisa
-│   ├── RecentTab.js      # Aba de arquivos recentes
-│   ├── UploadModal.js    # Modal de upload de arquivos
-│   └── SessionsModal.js  # Modal de gerenciamento de sessões
-├── App.js               # Componente principal
-├── index.js            # Entrada da aplicação
-└── index.css           # Estilos globais
-
-public/
-└── electron.js         # Processo principal do Electron
+Projeto_Advocacia/
+├── server/                 # Backend Node.js
+│   ├── config/            # Configurações (database)
+│   ├── middleware/        # Middlewares (auth)
+│   ├── routes/            # Rotas da API
+│   │   ├── auth.js        # Autenticação
+│   │   ├── sessoes.js     # Sessões
+│   │   ├── arquivos.js    # Arquivos
+│   │   └── admin.js       # Admin
+│   ├── migrations/        # Migrations SQL
+│   ├── uploads/           # Arquivos salvos (gitignored)
+│   └── server.js          # Servidor principal
+│
+├── src/                    # Frontend React
+│   ├── components/        # Componentes React
+│   │   ├── Login.js       # Tela de login
+│   │   ├── AdminPanel.js  # Painel admin
+│   │   ├── SearchTab.js   # Aba de pesquisa
+│   │   ├── RecentTab.js   # Aba de recentes
+│   │   └── ...
+│   ├── services/          # Serviços de API
+│   │   └── api.js         # Cliente API
+│   ├── AppWeb.js          # App principal
+│   └── index.js           # Entry point
+│
+├── public/                 # Arquivos públicos
+└── docs/                   # Documentação
 ```
 
-## Como Usar
+## 🔐 Segurança
 
-1. **Upload de Arquivos**: Clique no botão "Upload" para adicionar novos documentos
-2. **Organizar em Sessões**: Use o botão "Sessões" para criar e gerenciar categorias
-3. **Pesquisar**: Digite na barra de pesquisa para encontrar documentos
-4. **Acessar Recentes**: Use a aba "Arquivos Recentes" para documentos utilizados recentemente
-5. **Abrir Documentos**: Clique duplo em qualquer arquivo para abri-lo
+- Senhas hasheadas com bcrypt
+- Autenticação JWT
+- Validação de dados (express-validator)
+- CORS configurado
+- Helmet para segurança HTTP
+- Isolamento de dados por usuário
 
-## Sessões Padrão
+## 📊 Banco de Dados
 
-O sistema vem com as seguintes sessões pré-configuradas:
+### Tabelas Principais
 
-- Criminal
-- Cível
-- Trabalhista
-- Tributário
-- Família
+- **usuarios**: Usuários do sistema
+- **sessoes**: Categorias de documentos
+- **arquivos**: Documentos e metadados
 
-## Formatos Suportados
+## 🚢 Deploy
 
-- PDF (.pdf)
-- Microsoft Word (.doc, .docx)
-- Texto (.txt)
+### Opções Recomendadas
 
-## Licença
+1. **Railway** (Mais fácil)
+   - Deploy automático
+   - PostgreSQL incluído
+   - Frontend no Vercel/Netlify
+
+2. **Heroku**
+   - Addon PostgreSQL
+   - Deploy via Git
+
+3. **AWS/DigitalOcean**
+   - Mais controle
+   - Requer mais configuração
+
+## 📝 Scripts Disponíveis
+
+### Frontend
+- `npm start` - Desenvolvimento
+- `npm run build` - Build de produção
+
+### Backend
+- `npm run dev` - Desenvolvimento (nodemon)
+- `npm start` - Produção
+- `npm run migrate` - Executar migrations
+
+## 🤝 Contribuindo
+
+1. Fork o projeto
+2. Crie uma branch (`git checkout -b feature/nova-funcionalidade`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`)
+4. Push para a branch (`git push origin feature/nova-funcionalidade`)
+5. Abra um Pull Request
+
+## 📄 Licença
 
 Este projeto é de uso privado para escritórios de advocacia.
+
+## 👨‍💻 Autor
+
+**Lucas Lima**
+
+## 🙏 Agradecimentos
+
+- Comunidade React
+- Comunidade Node.js
+- Todos os mantenedores das bibliotecas utilizadas
+
+---
+
+⭐ Se este projeto foi útil, considere dar uma estrela!

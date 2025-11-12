@@ -25,7 +25,8 @@ const SearchTab = ({
 
   const toggleFavorito = async (arquivo) => {
     try {
-      await window.electronAPI.toggleFavorito(arquivo.id);
+      const { arquivosAPI } = require('../services/api');
+      await arquivosAPI.toggleFavorito(arquivo.id);
       // Notifica o componente pai para recarregar os dados
       onDataChange();
     } catch (error) {
@@ -35,7 +36,8 @@ const SearchTab = ({
 
   const saveNotas = async (arquivoId) => {
     try {
-      await window.electronAPI.updateNotas(arquivoId, notas);
+      const { arquivosAPI } = require('../services/api');
+      await arquivosAPI.updateNotas(arquivoId, notas);
       setShowNotesModal(null);
       setNotas("");
     } catch (error) {
@@ -145,19 +147,19 @@ const SearchTab = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-white">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-semibold text-white">
           {results.length} resultado{results.length !== 1 ? "s" : ""} para "
           {query}"
         </h3>
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-4">
         {results.map((arquivo) => (
           <div
             key={arquivo.id}
-            className="bg-gray-800/30 rounded-lg p-3 hover:bg-gray-700/50 transition-all duration-200"
+            className="bg-gray-800/30 rounded-xl p-5 hover:bg-gray-700/50 transition-all duration-200 border border-gray-700/30"
           >
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0">
