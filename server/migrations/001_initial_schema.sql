@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 -- Tabela de sessões
 CREATE TABLE IF NOT EXISTS sessoes (
     id SERIAL PRIMARY KEY,
-    nome VARCHAR(255) UNIQUE NOT NULL,
+    nome VARCHAR(255) NOT NULL,
     usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -45,15 +45,12 @@ CREATE INDEX IF NOT EXISTS idx_arquivos_accessed ON arquivos(accessed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_arquivos_nome ON arquivos USING gin(to_tsvector('portuguese', nome));
 CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(usuario_id);
 
--- Inserir sessões padrão para cada usuário (será feito via trigger ou aplicação)
--- Por enquanto, inserimos sessões globais
-INSERT INTO sessoes (nome, usuario_id) VALUES 
-    ('Criminal', NULL),
-    ('Cível', NULL),
-    ('Trabalhista', NULL),
-    ('Tributário', NULL),
-    ('Família', NULL)
-ON CONFLICT (nome) DO NOTHING;
+-- Índice único composto para sessões (permite mesmo nome para global e usuário, mas não duplicatas)
+CREATE UNIQUE INDEX IF NOT EXISTS sessoes_nome_usuario_unique 
+ON sessoes (nome, COALESCE(usuario_id::text, 'GLOBAL'));
+
+-- Sessões globais serão criadas pelo script de setup
+-- Não inserir aqui para evitar conflitos
 
 -- Trigger para atualizar updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -64,6 +61,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_usuarios_updated_at ON usuarios;
 CREATE TRIGGER update_usuarios_updated_at BEFORE UPDATE ON usuarios
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

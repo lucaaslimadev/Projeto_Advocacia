@@ -1,7 +1,6 @@
 # Dependencies
 node_modules/
-node_modules 2/
-package-lock 2.json
+package-lock.json
 
 # Build outputs
 build/
@@ -23,29 +22,14 @@ dist/
 *~
 .DS_Store
 
-# Server uploads (arquivos dos usuários)
+# Server uploads (user files)
 server/uploads/
 server/uploads/**/*
 
-# Database (não versionar banco de dados)
+# Database
 *.db
 *.sqlite
 *.sqlite3
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-*.egg-info/
-dist/
-build/
-
-# Electron (mantido para referência)
-# Mas não precisa mais se for só web
 
 # Logs
 logs/

@@ -13,6 +13,7 @@ router.post('/register', [
   body('email').isEmail().withMessage('Email inválido'),
   body('senha').isLength({ min: 6 }).withMessage('Senha deve ter pelo menos 6 caracteres'),
 ], async (req, res) => {
+  const client = await pool.connect();
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -21,13 +22,16 @@ router.post('/register', [
 
     const { nome, email, senha } = req.body;
 
+    await client.query('BEGIN');
+
     // Verificar se email já existe
-    const existingUser = await pool.query(
+    const existingUser = await client.query(
       'SELECT id FROM usuarios WHERE email = $1',
       [email]
     );
 
     if (existingUser.rows.length > 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ error: 'Email já cadastrado' });
     }
 
@@ -35,19 +39,15 @@ router.post('/register', [
     const hashedPassword = await bcrypt.hash(senha, 10);
 
     // Criar usuário
-    const result = await pool.query(
+    const result = await client.query(
       'INSERT INTO usuarios (nome, email, senha) VALUES ($1, $2, $3) RETURNING id, nome, email, role',
       [nome, email, hashedPassword]
     );
 
-    // Criar sessões padrão para o usuário
-    const sessoesPadrao = ['Criminal', 'Cível', 'Trabalhista', 'Tributário', 'Família'];
-    for (const sessaoNome of sessoesPadrao) {
-      await pool.query(
-        'INSERT INTO sessoes (nome, usuario_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-        [sessaoNome, result.rows[0].id]
-      );
-    }
+    await client.query('COMMIT');
+
+    // Não criar sessões padrão - usuários devem usar as sessões globais
+    console.log(`✅ Usuário criado: ${result.rows[0].email} (ID: ${result.rows[0].id})`);
 
     // Gerar token
     const token = jwt.sign(
@@ -61,8 +61,16 @@ router.post('/register', [
       user: result.rows[0],
     });
   } catch (error) {
-    console.error('Erro ao registrar usuário:', error);
-    res.status(500).json({ error: 'Erro ao registrar usuário' });
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('❌ Erro ao registrar usuário:', error);
+    console.error('Código:', error.code);
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+      res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+    } else {
+      res.status(500).json({ error: 'Erro ao registrar usuário' });
+    }
+  } finally {
+    client.release();
   }
 });
 
@@ -71,6 +79,7 @@ router.post('/login', [
   body('email').isEmail().withMessage('Email inválido'),
   body('senha').notEmpty().withMessage('Senha é obrigatória'),
 ], async (req, res) => {
+  const client = await pool.connect();
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -80,7 +89,7 @@ router.post('/login', [
     const { email, senha } = req.body;
 
     // Buscar usuário
-    const result = await pool.query(
+    const result = await client.query(
       'SELECT id, nome, email, senha, role, ativo FROM usuarios WHERE email = $1',
       [email]
     );
@@ -119,8 +128,15 @@ router.post('/login', [
       },
     });
   } catch (error) {
-    console.error('Erro ao fazer login:', error);
-    res.status(500).json({ error: 'Erro ao fazer login' });
+    console.error('❌ Erro ao fazer login:', error);
+    console.error('Código:', error.code);
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+      res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+    } else {
+      res.status(500).json({ error: 'Erro ao fazer login', details: process.env.NODE_ENV === 'development' ? error.message : undefined });
+    }
+  } finally {
+    client.release();
   }
 });
 

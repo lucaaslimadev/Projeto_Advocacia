@@ -1,72 +1,32 @@
 {
   "name": "advocacia-app",
-  "version": "1.0.0",
-  "description": "Controle de Documentos Jurídicos para Advogados",
-  "main": "public/electron.js",
+  "version": "2.0.0",
+  "description": "Sistema web para gerenciamento de documentos jurídicos",
   "homepage": "./",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "electron": "electron .",
-    "electron-dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron-pack": "npm run build && electron-builder",
-    "electron-pack-win": "npm run build && electron-builder --win",
-    "preelectron-pack": "npm run build",
-    "postinstall": "electron-builder install-app-deps"
-  },
-  "build": {
-    "appId": "com.advocacia.app",
-    "productName": "Controle de Documentos Jurídicos",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "build/**/*",
-      "node_modules/**/*",
-      "public/electron.js"
-    ],
-    "mac": {
-      "category": "public.app-category.productivity"
-    },
-    "win": {
-      "target": "portable",
-      "publisherName": "Sistema Advocacia"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": "always",
-      "createStartMenuShortcut": true,
-      "shortcutName": "Controle de Documentos Jurídicos"
-    },
-    "linux": {
-      "target": "AppImage"
-    }
+    "eject": "react-scripts eject"
   },
   "dependencies": {
-    "better-sqlite3": "^11.1.2",
-    "cross-spawn": "^7.0.6",
-    "docx": "^8.2.2",
-    "electron-is-dev": "^2.0.0",
+    "@hookform/resolvers": "^3.9.0",
+    "@tanstack/react-query": "^5.90.8",
     "lucide-react": "^0.263.1",
-    "pdf-lib": "^1.17.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.66.0",
     "react-router-dom": "^6.30.1",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "react-toastify": "^11.0.5",
+    "yup": "^1.4.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "autoprefixer": "^10.4.14",
-    "concurrently": "^8.2.2",
-    "electron": "^29.1.0",
-    "electron-builder": "^24.13.3",
     "postcss": "^8.4.27",
-    "tailwindcss": "^3.3.3",
-    "wait-on": "^7.2.0"
+    "tailwindcss": "^3.3.3"
   },
   "browserslist": {
     "production": [

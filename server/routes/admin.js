@@ -118,14 +118,10 @@ router.post('/usuarios', [
       [nome, email, hashedPassword, role]
     );
 
-    // Criar sessões padrão
-    const sessoesPadrao = ['Criminal', 'Cível', 'Trabalhista', 'Tributário', 'Família'];
-    for (const sessaoNome of sessoesPadrao) {
-      await pool.query(
-        'INSERT INTO sessoes (nome, usuario_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-        [sessaoNome, result.rows[0].id]
-      );
-    }
+    // Não criar sessões padrão - usuários devem usar as sessões globais
+    // Eles podem criar suas próprias sessões personalizadas se necessário
+    console.log(`✅ Usuário criado pelo admin: ${result.rows[0].email} (ID: ${result.rows[0].id}, Role: ${result.rows[0].role})`);
+    console.log(`📁 Usuário terá acesso às sessões globais automaticamente`);
 
     res.status(201).json(result.rows[0]);
   } catch (error) {

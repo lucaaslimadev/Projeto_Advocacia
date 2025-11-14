@@ -11,6 +11,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import FilterModal from "./FilterModal";
+import { showToast } from "../utils/toast";
 
 const SearchTab = ({
   results,
@@ -26,11 +27,13 @@ const SearchTab = ({
   const toggleFavorito = async (arquivo) => {
     try {
       const { arquivosAPI } = require('../services/api');
-      await arquivosAPI.toggleFavorito(arquivo.id);
-      // Notifica o componente pai para recarregar os dados
+      const response = await arquivosAPI.toggleFavorito(arquivo.id);
+      const novoEstado = response?.favorito ?? !arquivo.favorito;
       onDataChange();
+      showToast.success(novoEstado ? "Adicionado aos favoritos" : "Removido dos favoritos");
     } catch (error) {
       console.error("Erro ao alterar favorito:", error);
+      showToast.error("Erro ao alterar favorito");
     }
   };
 
@@ -40,8 +43,10 @@ const SearchTab = ({
       await arquivosAPI.updateNotas(arquivoId, notas);
       setShowNotesModal(null);
       setNotas("");
+      showToast.success("Notas salvas com sucesso");
     } catch (error) {
       console.error("Erro ao salvar notas:", error);
+      showToast.error("Erro ao salvar notas");
     }
   };
 

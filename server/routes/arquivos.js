@@ -44,6 +44,7 @@ router.use(authenticate);
 
 // Listar arquivos do usuário
 router.get('/', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { search, sessao_id, favoritos, limit = 20, offset = 0 } = req.query;
 
@@ -75,18 +76,26 @@ router.get('/', async (req, res) => {
     query += ` ORDER BY a.accessed_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
     params.push(parseInt(limit), parseInt(offset));
 
-    const result = await pool.query(query, params);
+    const result = await client.query(query, params);
     res.json(result.rows);
   } catch (error) {
-    console.error('Erro ao buscar arquivos:', error);
-    res.status(500).json({ error: 'Erro ao buscar arquivos' });
+    console.error('❌ Erro ao buscar arquivos:', error);
+    console.error('Código:', error.code);
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+      res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+    } else {
+      res.status(500).json({ error: 'Erro ao buscar arquivos' });
+    }
+  } finally {
+    client.release();
   }
 });
 
 // Buscar arquivos recentes
 router.get('/recentes', async (req, res) => {
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
+    const result = await client.query(
       `SELECT a.*, s.nome as sessao_nome 
        FROM arquivos a 
        LEFT JOIN sessoes s ON a.sessao_id = s.id 
@@ -97,16 +106,24 @@ router.get('/recentes', async (req, res) => {
     );
     res.json(result.rows);
   } catch (error) {
-    console.error('Erro ao buscar arquivos recentes:', error);
-    res.status(500).json({ error: 'Erro ao buscar arquivos recentes' });
+    console.error('❌ Erro ao buscar arquivos recentes:', error);
+    console.error('Código:', error.code);
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+      res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+    } else {
+      res.status(500).json({ error: 'Erro ao buscar arquivos recentes' });
+    }
+  } finally {
+    client.release();
   }
 });
 
 // Buscar arquivos por sessão
 router.get('/sessao/:sessaoId', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { sessaoId } = req.params;
-    const result = await pool.query(
+    const result = await client.query(
       `SELECT a.*, s.nome as sessao_nome 
        FROM arquivos a 
        LEFT JOIN sessoes s ON a.sessao_id = s.id 
@@ -116,8 +133,15 @@ router.get('/sessao/:sessaoId', async (req, res) => {
     );
     res.json(result.rows);
   } catch (error) {
-    console.error('Erro ao buscar arquivos da sessão:', error);
-    res.status(500).json({ error: 'Erro ao buscar arquivos da sessão' });
+    console.error('❌ Erro ao buscar arquivos da sessão:', error);
+    console.error('Código:', error.code);
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+      res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+    } else {
+      res.status(500).json({ error: 'Erro ao buscar arquivos da sessão' });
+    }
+  } finally {
+    client.release();
   }
 });
 
@@ -125,6 +149,7 @@ router.get('/sessao/:sessaoId', async (req, res) => {
 router.post('/upload', upload.single('arquivo'), [
   body('nome').trim().isLength({ min: 1 }).withMessage('Nome é obrigatório'),
 ], async (req, res) => {
+  const client = await pool.connect();
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -156,7 +181,9 @@ router.post('/upload', upload.single('arquivo'), [
     // Salvar caminho absoluto no banco
     const caminhoAbsoluto = path.resolve(req.file.path);
     
-    const result = await pool.query(
+    await client.query('BEGIN');
+    
+    const result = await client.query(
       `INSERT INTO arquivos 
        (nome, caminho, nome_original, tamanho, tipo_mime, sessao_id, usuario_id, palavras_chave, cliente, tag_cor, data_criacao) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
@@ -176,22 +203,31 @@ router.post('/upload', upload.single('arquivo'), [
       ]
     );
 
+    await client.query('COMMIT');
     res.status(201).json(result.rows[0]);
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-    console.error('Erro ao fazer upload:', error);
-    console.error('Stack:', error.stack);
-    res.status(500).json({ 
-      error: 'Erro ao fazer upload',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    console.error('❌ Erro ao fazer upload:', error);
+    console.error('Código:', error.code);
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+      res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+    } else {
+      res.status(500).json({ 
+        error: 'Erro ao fazer upload',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  } finally {
+    client.release();
   }
 });
 
 // Upload múltiplo
 router.post('/upload-multiple', upload.array('arquivos', 10), async (req, res) => {
+  const client = await pool.connect();
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'Nenhum arquivo fornecido' });
@@ -208,40 +244,43 @@ router.post('/upload-multiple', upload.array('arquivos', 10), async (req, res) =
       arquivosData = [];
     }
 
+    await client.query('BEGIN');
     const uploadedFiles = [];
 
-      for (let i = 0; i < req.files.length; i++) {
-        const file = req.files[i];
-        const fileData = arquivosData[i] || {};
-        
-        // Salvar caminho absoluto no banco
-        const caminhoAbsoluto = path.resolve(file.path);
+    for (let i = 0; i < req.files.length; i++) {
+      const file = req.files[i];
+      const fileData = arquivosData[i] || {};
+      
+      // Salvar caminho absoluto no banco
+      const caminhoAbsoluto = path.resolve(file.path);
 
-        const result = await pool.query(
-          `INSERT INTO arquivos 
-           (nome, caminho, nome_original, tamanho, tipo_mime, sessao_id, usuario_id, palavras_chave, cliente, tag_cor, data_criacao) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
-           RETURNING *, (SELECT nome FROM sessoes WHERE id = sessao_id) as sessao_nome`,
-          [
-            fileData.nome || path.parse(file.originalname).name,
-            caminhoAbsoluto,
-            file.originalname,
-            file.size,
-            file.mimetype,
-            fileData.sessao_id || null,
-            req.user.id,
-            fileData.palavras_chave || null,
-            fileData.cliente || null,
-            fileData.tag_cor || null,
-            fileData.data_criacao || new Date().toISOString().split('T')[0],
-          ]
-        );
+      const result = await client.query(
+        `INSERT INTO arquivos 
+         (nome, caminho, nome_original, tamanho, tipo_mime, sessao_id, usuario_id, palavras_chave, cliente, tag_cor, data_criacao) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+         RETURNING *, (SELECT nome FROM sessoes WHERE id = sessao_id) as sessao_nome`,
+        [
+          fileData.nome || path.parse(file.originalname).name,
+          caminhoAbsoluto,
+          file.originalname,
+          file.size,
+          file.mimetype,
+          fileData.sessao_id ? parseInt(fileData.sessao_id, 10) : null,
+          req.user.id,
+          fileData.palavras_chave || null,
+          fileData.cliente || null,
+          fileData.tag_cor || null,
+          fileData.data_criacao || new Date().toISOString().split('T')[0],
+        ]
+      );
 
       uploadedFiles.push(result.rows[0]);
     }
 
+    await client.query('COMMIT');
     res.status(201).json({ arquivos: uploadedFiles });
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
     // Limpar arquivos em caso de erro
     if (req.files) {
       req.files.forEach(file => {
@@ -250,8 +289,15 @@ router.post('/upload-multiple', upload.array('arquivos', 10), async (req, res) =
         }
       });
     }
-    console.error('Erro ao fazer upload múltiplo:', error);
-    res.status(500).json({ error: 'Erro ao fazer upload múltiplo' });
+    console.error('❌ Erro ao fazer upload múltiplo:', error);
+    console.error('Código:', error.code);
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+      res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+    } else {
+      res.status(500).json({ error: 'Erro ao fazer upload múltiplo' });
+    }
+  } finally {
+    client.release();
   }
 });
 
@@ -259,6 +305,7 @@ router.post('/upload-multiple', upload.array('arquivos', 10), async (req, res) =
 router.put('/:id', [
   body('nome').trim().isLength({ min: 1 }).withMessage('Nome é obrigatório'),
 ], async (req, res) => {
+  const client = await pool.connect();
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -266,53 +313,93 @@ router.put('/:id', [
     }
 
     const { id } = req.params;
+    const fileId = parseInt(id, 10);
+    
+    if (isNaN(fileId)) {
+      return res.status(400).json({ error: 'ID de arquivo inválido' });
+    }
+
     const { nome, sessao_id, palavras_chave, cliente, tag_cor } = req.body;
 
+    console.log(`📝 Tentativa de atualizar arquivo ID: ${fileId} pelo usuário ${req.user.id}`);
+    console.log(`   Dados:`, { nome, sessao_id, palavras_chave, cliente, tag_cor });
+
+    await client.query('BEGIN');
+
     // Verificar se o arquivo pertence ao usuário
-    const arquivo = await pool.query(
+    const arquivo = await client.query(
       'SELECT * FROM arquivos WHERE id = $1 AND usuario_id = $2',
-      [id, req.user.id]
+      [fileId, req.user.id]
     );
 
     if (arquivo.rows.length === 0) {
+      await client.query('ROLLBACK');
+      console.log(`❌ Arquivo ${fileId} não encontrado ou não pertence ao usuário ${req.user.id}`);
       return res.status(404).json({ error: 'Arquivo não encontrado' });
     }
 
-    const result = await pool.query(
+    const result = await client.query(
       `UPDATE arquivos 
        SET nome = $1, sessao_id = $2, palavras_chave = $3, cliente = $4, tag_cor = $5 
        WHERE id = $6 AND usuario_id = $7 
        RETURNING *, (SELECT nome FROM sessoes WHERE id = sessao_id) as sessao_nome`,
-      [nome, sessao_id || null, palavras_chave || null, cliente || null, tag_cor || null, id, req.user.id]
+      [
+        nome.trim(), 
+        sessao_id ? parseInt(sessao_id, 10) : null, 
+        palavras_chave ? palavras_chave.trim() : null, 
+        cliente ? cliente.trim() : null, 
+        tag_cor || null, 
+        fileId, 
+        req.user.id
+      ]
     );
 
+    await client.query('COMMIT');
+
+    console.log(`✅ Arquivo ${fileId} atualizado com sucesso`);
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('Erro ao atualizar arquivo:', error);
-    res.status(500).json({ error: 'Erro ao atualizar arquivo' });
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('❌ Erro ao atualizar arquivo:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Erro ao atualizar arquivo',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    client.release();
   }
 });
 
 // Atualizar último acesso
 router.patch('/:id/access', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
-    await pool.query(
+    await client.query(
       'UPDATE arquivos SET accessed_at = CURRENT_TIMESTAMP WHERE id = $1 AND usuario_id = $2',
       [id, req.user.id]
     );
     res.json({ message: 'Acesso atualizado' });
   } catch (error) {
-    console.error('Erro ao atualizar acesso:', error);
-    res.status(500).json({ error: 'Erro ao atualizar acesso' });
+    console.error('❌ Erro ao atualizar acesso:', error);
+    console.error('Código:', error.code);
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+      res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+    } else {
+      res.status(500).json({ error: 'Erro ao atualizar acesso' });
+    }
+  } finally {
+    client.release();
   }
 });
 
 // Toggle favorito
 router.patch('/:id/favorito', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
-    const result = await pool.query(
+    const result = await client.query(
       `UPDATE arquivos 
        SET favorito = NOT favorito 
        WHERE id = $1 AND usuario_id = $2 
@@ -326,8 +413,15 @@ router.patch('/:id/favorito', async (req, res) => {
 
     res.json({ favorito: result.rows[0].favorito });
   } catch (error) {
-    console.error('Erro ao favoritar arquivo:', error);
-    res.status(500).json({ error: 'Erro ao favoritar arquivo' });
+    console.error('❌ Erro ao favoritar arquivo:', error);
+    console.error('Código:', error.code);
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+      res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+    } else {
+      res.status(500).json({ error: 'Erro ao favoritar arquivo' });
+    }
+  } finally {
+    client.release();
   }
 });
 
@@ -335,11 +429,12 @@ router.patch('/:id/favorito', async (req, res) => {
 router.patch('/:id/notas', [
   body('notas').optional(),
 ], async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
     const { notas } = req.body;
 
-    const result = await pool.query(
+    const result = await client.query(
       'UPDATE arquivos SET notas = $1 WHERE id = $2 AND usuario_id = $3 RETURNING notas',
       [notas || null, id, req.user.id]
     );
@@ -350,48 +445,164 @@ router.patch('/:id/notas', [
 
     res.json({ notas: result.rows[0].notas });
   } catch (error) {
-    console.error('Erro ao atualizar notas:', error);
-    res.status(500).json({ error: 'Erro ao atualizar notas' });
+    console.error('❌ Erro ao atualizar notas:', error);
+    console.error('Código:', error.code);
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+      res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+    } else {
+      res.status(500).json({ error: 'Erro ao atualizar notas' });
+    }
+  } finally {
+    client.release();
   }
 });
 
 // Deletar arquivo
 router.delete('/:id', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
+    const fileId = parseInt(id, 10);
+
+    if (isNaN(fileId)) {
+      return res.status(400).json({ error: 'ID de arquivo inválido' });
+    }
+
+    console.log(`🗑️  Tentativa de deletar arquivo ID: ${fileId} pelo usuário ${req.user.id}`);
+
+    await client.query('BEGIN');
 
     // Buscar arquivo
-    const arquivo = await pool.query(
-      'SELECT caminho FROM arquivos WHERE id = $1 AND usuario_id = $2',
-      [id, req.user.id]
+    const arquivo = await client.query(
+      'SELECT caminho, nome FROM arquivos WHERE id = $1 AND usuario_id = $2',
+      [fileId, req.user.id]
     );
 
     if (arquivo.rows.length === 0) {
+      await client.query('ROLLBACK');
+      console.log(`❌ Arquivo ${fileId} não encontrado ou não pertence ao usuário ${req.user.id}`);
       return res.status(404).json({ error: 'Arquivo não encontrado' });
     }
 
-    // Deletar arquivo físico
     const filePath = arquivo.rows[0].caminho;
+    const fileName = arquivo.rows[0].nome;
+
+    // Deletar arquivo físico
     if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+      try {
+        fs.unlinkSync(filePath);
+        console.log(`   📁 Arquivo físico deletado: ${filePath}`);
+      } catch (fileError) {
+        console.warn(`   ⚠️  Erro ao deletar arquivo físico: ${fileError.message}`);
+        // Continuar mesmo se não conseguir deletar o arquivo físico
+      }
+    } else {
+      console.warn(`   ⚠️  Arquivo físico não encontrado: ${filePath}`);
     }
 
     // Deletar do banco
-    await pool.query('DELETE FROM arquivos WHERE id = $1 AND usuario_id = $2', [id, req.user.id]);
+    await client.query('DELETE FROM arquivos WHERE id = $1 AND usuario_id = $2', [fileId, req.user.id]);
+    await client.query('COMMIT');
 
+    console.log(`✅ Arquivo "${fileName}" (ID: ${fileId}) deletado com sucesso`);
     res.json({ message: 'Arquivo deletado com sucesso' });
   } catch (error) {
-    console.error('Erro ao deletar arquivo:', error);
-    res.status(500).json({ error: 'Erro ao deletar arquivo' });
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('❌ Erro ao deletar arquivo:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Erro ao deletar arquivo',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    client.release();
+  }
+});
+
+// Visualizar arquivo (sem download)
+router.get('/:id/view', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+
+    const result = await client.query(
+      'SELECT caminho, nome_original, tipo_mime FROM arquivos WHERE id = $1 AND usuario_id = $2',
+      [id, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Arquivo não encontrado' });
+    }
+
+    const { caminho, nome_original, tipo_mime } = result.rows[0];
+    
+    // Resolver caminho absoluto se necessário
+    const caminhoAbsoluto = path.isAbsolute(caminho) ? caminho : path.join(__dirname, '..', caminho);
+
+    if (!fs.existsSync(caminhoAbsoluto)) {
+      return res.status(404).json({ error: 'Arquivo físico não encontrado' });
+    }
+
+    // Atualizar último acesso
+    await client.query(
+      'UPDATE arquivos SET accessed_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [id]
+    );
+
+    // Detectar tipo MIME baseado na extensão
+    const ext = path.extname(nome_original).toLowerCase();
+    const mimeTypes = {
+      '.pdf': 'application/pdf',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.txt': 'text/plain',
+    };
+    const contentType = tipo_mime || mimeTypes[ext] || 'application/octet-stream';
+
+    // Headers para visualização (sem Content-Disposition: attachment)
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Type');
+    
+    // Para PDFs e textos, permitir visualização inline
+    if (ext === '.pdf' || ext === '.txt') {
+      res.setHeader('Content-Disposition', `inline; filename="${nome_original}"`);
+    } else {
+      // Para DOC/DOCX, ainda forçar download (não podem ser visualizados diretamente)
+      const encodedFilename = encodeURIComponent(nome_original);
+      res.setHeader('Content-Disposition', `attachment; filename="${nome_original}"; filename*=UTF-8''${encodedFilename}`);
+    }
+
+    // Enviar arquivo
+    res.sendFile(caminhoAbsoluto, (err) => {
+      if (err) {
+        console.error('Erro ao visualizar arquivo:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Erro ao visualizar arquivo' });
+        }
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erro ao visualizar arquivo:', error);
+    console.error('Código:', error.code);
+    if (!res.headersSent) {
+      if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+        res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+      } else {
+        res.status(500).json({ error: 'Erro ao visualizar arquivo' });
+      }
+    }
+  } finally {
+    client.release();
   }
 });
 
 // Download arquivo
 router.get('/:id/download', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
 
-    const result = await pool.query(
+    const result = await client.query(
       'SELECT caminho, nome_original FROM arquivos WHERE id = $1 AND usuario_id = $2',
       [id, req.user.id]
     );
@@ -412,7 +623,7 @@ router.get('/:id/download', async (req, res) => {
     }
 
     // Atualizar último acesso
-    await pool.query(
+    await client.query(
       'UPDATE arquivos SET accessed_at = CURRENT_TIMESTAMP WHERE id = $1',
       [id]
     );
@@ -443,8 +654,17 @@ router.get('/:id/download', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erro ao fazer download:', error);
-    res.status(500).json({ error: 'Erro ao fazer download' });
+    console.error('❌ Erro ao fazer download:', error);
+    console.error('Código:', error.code);
+    if (!res.headersSent) {
+      if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === '57P01') {
+        res.status(503).json({ error: 'Serviço temporariamente indisponível. Tente novamente.' });
+      } else {
+        res.status(500).json({ error: 'Erro ao fazer download' });
+      }
+    }
+  } finally {
+    client.release();
   }
 });
 

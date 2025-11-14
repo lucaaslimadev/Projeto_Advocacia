@@ -86,6 +86,11 @@ export const sessoesAPI = {
     try {
       const result = await authFetch('/sessoes');
       console.log('API sessoes getAll result:', result);
+      // Garantir que sempre retornamos um array
+      if (!Array.isArray(result)) {
+        console.warn('⚠️  Resultado de sessões não é um array:', result);
+        return [];
+      }
       return result;
     } catch (error) {
       console.error('Erro ao buscar sessões:', error);
@@ -157,12 +162,53 @@ export const arquivosAPI = {
 
   updateAccess: (id) => authFetch(`/arquivos/${id}/access`, { method: 'PATCH' }),
 
-  toggleFavorito: (id) => authFetch(`/arquivos/${id}/favorito`, { method: 'PATCH' }),
+  toggleFavorito: async (id) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/arquivos/${id}/favorito`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erro ao favoritar arquivo');
+    }
+
+    return response.json();
+  },
 
   updateNotas: (id, notas) => authFetch(`/arquivos/${id}/notas`, {
     method: 'PATCH',
     body: JSON.stringify({ notas }),
   }),
+
+  view: async (id) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`${API_URL}/arquivos/${id}/view`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Erro ao visualizar arquivo' }));
+        throw new Error(error.error || 'Erro ao visualizar arquivo');
+      }
+
+      // Retornar URL do blob para visualização
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      return url;
+    } catch (error) {
+      console.error('Erro ao visualizar arquivo:', error);
+      throw error;
+    }
+  },
 
   download: async (id) => {
     const token = localStorage.getItem('token');

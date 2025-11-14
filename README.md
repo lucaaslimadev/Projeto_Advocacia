@@ -2,6 +2,8 @@
 
 Sistema web completo para gerenciamento de documentos jurídicos, desenvolvido para escritórios de advocacia.
 
+> **Versão 2.0.0** - Projeto refatorado e modernizado. Código legado (Electron/SQLite) removido.
+
 ## 🚀 Tecnologias
 
 ### Frontend
@@ -63,11 +65,11 @@ cd ..
 ### 3. Configurar banco de dados
 
 ```bash
-# Criar banco de dados
-createdb advocacia_db
+# Opção 1: Usar script automático (recomendado)
+node server/scripts/setup-database.js
 
-# Executar migrations
-export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"  # macOS
+# Opção 2: Manual
+createdb advocacia_db
 psql -U seu_usuario -d advocacia_db -f server/migrations/001_initial_schema.sql
 ```
 
@@ -131,6 +133,9 @@ Projeto_Advocacia/
 │   │   ├── arquivos.js    # Arquivos
 │   │   └── admin.js       # Admin
 │   ├── migrations/        # Migrations SQL
+│   ├── scripts/           # Scripts utilitários
+│   │   ├── utils/         # Scripts de utilidade
+│   │   └── migrations/   # Scripts de migração
 │   ├── uploads/           # Arquivos salvos (gitignored)
 │   └── server.js          # Servidor principal
 │
@@ -141,9 +146,11 @@ Projeto_Advocacia/
 │   │   ├── SearchTab.js   # Aba de pesquisa
 │   │   ├── RecentTab.js   # Aba de recentes
 │   │   └── ...
+│   ├── hooks/             # Custom hooks
 │   ├── services/          # Serviços de API
 │   │   └── api.js         # Cliente API
-│   ├── AppWeb.js          # App principal
+│   ├── utils/             # Utilitários
+│   ├── App.js             # App principal
 │   └── index.js           # Entry point
 │
 ├── public/                 # Arquivos públicos
@@ -193,7 +200,7 @@ Projeto_Advocacia/
 ### Backend
 - `npm run dev` - Desenvolvimento (nodemon)
 - `npm start` - Produção
-- `npm run migrate` - Executar migrations
+- `node scripts/setup-database.js` - Configurar banco de dados (cria DB, executa migrations, cria sessões globais)
 
 ## 🤝 Contribuindo
 

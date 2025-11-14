@@ -10,10 +10,13 @@ import {
   CheckSquare,
   Square,
 } from "lucide-react";
+import ConfirmModal from "./ConfirmModal";
+import { showToast } from "../utils/toast";
 
 const RecentTab = ({ files, onFileOpen, onFileEdit, title, onDataChange }) => {
   const [selectedFiles, setSelectedFiles] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const toggleFileSelection = (fileId) => {
     const newSelected = new Set(selectedFiles);
@@ -33,17 +36,15 @@ const RecentTab = ({ files, onFileOpen, onFileEdit, title, onDataChange }) => {
     }
   };
 
-  const deleteSelectedFiles = async () => {
-    if (selectedFiles.size === 0) return;
-
-    if (
-      !window.confirm(
-        `Tem certeza que deseja excluir ${selectedFiles.size} arquivo(s)?`
-      )
-    ) {
+  const handleDeleteClick = () => {
+    if (selectedFiles.size === 0) {
+      showToast.warning("Selecione pelo menos um arquivo para excluir");
       return;
     }
+    setShowConfirmDelete(true);
+  };
 
+  const deleteSelectedFiles = async () => {
     setIsDeleting(true);
     try {
       const { arquivosAPI } = require('../services/api');
@@ -52,13 +53,14 @@ const RecentTab = ({ files, onFileOpen, onFileEdit, title, onDataChange }) => {
         await arquivosAPI.delete(fileId);
       }
       setSelectedFiles(new Set());
-      alert(`${count} arquivo(s) excluído(s) com sucesso!`);
-      onDataChange(); // Notifica o componente pai para recarregar os dados
+      showToast.success(`${count} arquivo(s) excluído(s) com sucesso!`);
+      onDataChange();
     } catch (error) {
       console.error("Erro ao excluir arquivos:", error);
-      alert("Erro ao excluir arquivos: " + error.message);
+      showToast.error("Erro ao excluir arquivos: " + error.message);
     } finally {
       setIsDeleting(false);
+      setShowConfirmDelete(false);
     }
   };
   if (files.length === 0) {
@@ -158,9 +160,10 @@ const RecentTab = ({ files, onFileOpen, onFileEdit, title, onDataChange }) => {
             </button>
             {selectedFiles.size > 0 && (
               <button
-                onClick={deleteSelectedFiles}
+                onClick={handleDeleteClick}
                 disabled={isDeleting}
                 className="flex items-center space-x-1 px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 transition-colors duration-200"
+                aria-label="Excluir arquivos selecionados"
               >
                 <Trash2 className="w-4 h-4" />
                 <span className="text-xs">
@@ -257,6 +260,18 @@ const RecentTab = ({ files, onFileOpen, onFileEdit, title, onDataChange }) => {
           </div>
         ))}
       </div>
+
+      {/* Modal de Confirmação */}
+      <ConfirmModal
+        isOpen={showConfirmDelete}
+        onClose={() => setShowConfirmDelete(false)}
+        onConfirm={deleteSelectedFiles}
+        title="Confirmar Exclusão"
+        message={`Tem certeza que deseja excluir ${selectedFiles.size} arquivo(s)? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 };

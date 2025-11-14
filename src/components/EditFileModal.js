@@ -1,41 +1,62 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { X, Save, FolderOpen, Tag, User } from "lucide-react";
+import { showToast } from "../utils/toast";
 
 const EditFileModal = ({ arquivo, sessions, onClose, onSuccess }) => {
-  const [nome, setNome] = useState(arquivo.nome);
-  const [selectedSession, setSelectedSession] = useState(
-    arquivo.sessao_id || ""
-  );
-  const [keywords, setKeywords] = useState(arquivo.palavras_chave || "");
-  const [cliente, setCliente] = useState(arquivo.cliente || "");
-  const [tagCor, setTagCor] = useState(arquivo.tag_cor || "");
-  const [isSaving, setIsSaving] = useState(false);
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm({
+    defaultValues: {
+      nome: arquivo?.nome || "",
+      sessao_id: arquivo?.sessao_id || "",
+      palavras_chave: arquivo?.palavras_chave || "",
+      cliente: arquivo?.cliente || "",
+      tag_cor: arquivo?.tag_cor || "",
+    }
+  });
 
-  const handleSave = async () => {
-    if (!nome.trim()) {
-      alert("Por favor, defina um nome para o arquivo.");
+  const [tagCor, setTagCor] = useState(arquivo?.tag_cor || "");
+
+  // Atualizar form quando arquivo mudar
+  useEffect(() => {
+    if (arquivo) {
+      reset({
+        nome: arquivo.nome || "",
+        sessao_id: arquivo.sessao_id || "",
+        palavras_chave: arquivo.palavras_chave || "",
+        cliente: arquivo.cliente || "",
+        tag_cor: arquivo.tag_cor || "",
+      });
+      setTagCor(arquivo.tag_cor || "");
+    }
+  }, [arquivo, reset]);
+
+  const onSubmit = async (data) => {
+    if (!arquivo || !arquivo.id) {
+      showToast.error("Arquivo inválido");
       return;
     }
 
-    setIsSaving(true);
-
     try {
       const { arquivosAPI } = require('../services/api');
-      await arquivosAPI.update(arquivo.id, {
-        nome: nome.trim(),
-        sessao_id: selectedSession || null,
-        palavras_chave: keywords.trim(),
-        cliente: cliente.trim(),
-        tag_cor: tagCor,
-      });
+      
+      const updateData = {
+        nome: data.nome.trim(),
+        sessao_id: data.sessao_id && data.sessao_id !== '' ? parseInt(data.sessao_id, 10) : null,
+        palavras_chave: data.palavras_chave?.trim() || null,
+        cliente: data.cliente?.trim() || null,
+        tag_cor: tagCor || null,
+      };
 
-      alert("Arquivo atualizado com sucesso!");
+      console.log('Atualizando arquivo:', arquivo.id, updateData);
+      
+      await arquivosAPI.update(arquivo.id, updateData);
+
+      showToast.success("Arquivo atualizado com sucesso!");
       onSuccess();
     } catch (error) {
       console.error("Erro ao atualizar arquivo:", error);
-      alert("Erro ao atualizar arquivo: " + error.message);
-    } finally {
-      setIsSaving(false);
+      const errorMessage = error.message || "Erro ao atualizar arquivo";
+      showToast.error(errorMessage);
     }
   };
 
@@ -54,19 +75,24 @@ const EditFileModal = ({ arquivo, sessions, onClose, onSuccess }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
           {/* File Name */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Nome do Arquivo
+              Nome do Arquivo *
             </label>
             <input
               type="text"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              {...register("nome", { required: "Nome é obrigatório", minLength: { value: 1, message: "Nome não pode estar vazio" } })}
+              className={`w-full bg-gray-700 border rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                errors.nome ? "border-red-500" : "border-gray-600"
+              }`}
               placeholder="Digite o nome do arquivo"
+              aria-invalid={errors.nome ? "true" : "false"}
             />
+            {errors.nome && (
+              <p className="text-red-400 text-xs mt-1">{errors.nome.message}</p>
+            )}
           </div>
 
           {/* Session */}
@@ -76,8 +102,7 @@ const EditFileModal = ({ arquivo, sessions, onClose, onSuccess }) => {
               Sessão
             </label>
             <select
-              value={selectedSession}
-              onChange={(e) => setSelectedSession(e.target.value)}
+              {...register("sessao_id")}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Sem sessão</option>
@@ -96,8 +121,7 @@ const EditFileModal = ({ arquivo, sessions, onClose, onSuccess }) => {
               Palavras-chave
             </label>
             <textarea
-              value={keywords}
-              onChange={(e) => setKeywords(e.target.value)}
+              {...register("palavras_chave")}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               rows="3"
               placeholder="Digite palavras-chave separadas por vírgula"
@@ -112,8 +136,7 @@ const EditFileModal = ({ arquivo, sessions, onClose, onSuccess }) => {
             </label>
             <input
               type="text"
-              value={cliente}
-              onChange={(e) => setCliente(e.target.value)}
+              {...register("cliente")}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Nome do cliente"
             />
@@ -153,24 +176,25 @@ const EditFileModal = ({ arquivo, sessions, onClose, onSuccess }) => {
               )}
             </div>
           </div>
-        </div>
+        </form>
 
         {/* Footer */}
         <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-700">
           <button
             onClick={onClose}
+            type="button"
             className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors duration-200"
-            disabled={isSaving}
+            disabled={isSubmitting}
           >
             Cancelar
           </button>
           <button
-            onClick={handleSave}
-            disabled={!nome.trim() || isSaving}
+            onClick={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center space-x-2"
           >
             <Save className="w-4 h-4" />
-            <span>{isSaving ? "Salvando..." : "Salvar"}</span>
+            <span>{isSubmitting ? "Salvando..." : "Salvar"}</span>
           </button>
         </div>
       </div>

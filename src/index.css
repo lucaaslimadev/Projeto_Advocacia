@@ -9,6 +9,15 @@
   body {
     @apply bg-gray-50 text-gray-900 font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  body.dark {
+    @apply bg-gray-900 text-gray-100;
+  }
+
+  body.light {
+    @apply bg-gray-50 text-gray-900;
   }
 }
 
